@@ -23,7 +23,7 @@ KairoCal is an AI-driven smart calendar assistant designed to simplify task sche
 - **Infra/DevOps:** Docker, AWS (Lambda, Cognito), Terraform, GitHub Actions
 
 ---
-
+```
 ## 📁 Folder Structure
 
 KairoCal/
@@ -33,7 +33,7 @@ KairoCal/
 ├── docs/ # Project documentation
 ├── assets/ # UI mockups, wireframes
 └── README.md
-
+```
 ---
 
 ## 👩‍💻 How to Contribute
