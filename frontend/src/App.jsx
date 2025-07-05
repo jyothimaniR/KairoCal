@@ -4,15 +4,41 @@ import viteLogo from '/vite.svg';
 import './App.css';
 
 import { Authenticator } from '@aws-amplify/ui-react';
+import '@aws-amplify/ui-react/styles.css';
+
+const formFields = {
+  signUp: {
+    email: {
+      label: 'Email',
+      placeholder: 'Enter your email',
+      required: true,
+    },
+    given_name: {
+      label: 'First Name',
+      placeholder: 'Enter your first name',
+      required: true,
+    },
+    password: {
+      label: 'Password',
+      placeholder: 'Enter your password',
+      required: true,
+    },
+    confirm_password: {
+      label: 'Confirm Password',
+      placeholder: 'Confirm your password',
+      required: true,
+    },
+  },
+};
 
 function App() {
   const [count, setCount] = useState(0);
 
   return (
-    <Authenticator>
+    <Authenticator formFields={formFields}>
       {({ signOut, user }) => (
         <main>
-          <h2>Welcome, {user?.username} 👋</h2>
+          <h2>Welcome, {user?.attributes?.given_name} 👋</h2>
           <button onClick={signOut}>Sign out</button>
 
           <div>
