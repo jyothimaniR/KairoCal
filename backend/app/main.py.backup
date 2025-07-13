@@ -1,9 +1,9 @@
+# backend/app/main.py
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from app.core.database import get_db, engine
 from app.config import get_settings
-from app.api import users, events
 
 settings = get_settings()
 
@@ -17,15 +17,11 @@ app = FastAPI(
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=["http://localhost:5173"],  # Vite dev server
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# Include API routers
-app.include_router(users.router)
-app.include_router(events.router)
 
 @app.get("/")
 def read_root():
@@ -61,10 +57,12 @@ def api_status():
 def database_status(db: Session = Depends(get_db)):
     """Check database connectivity and table status"""
     try:
+        # Test database connection
         from sqlalchemy import text
         result = db.execute(text("SELECT 1"))
         result.fetchone()
         
+        # Check if tables exist
         from sqlalchemy import inspect
         inspector = inspect(engine)
         tables = inspector.get_table_names()
@@ -78,6 +76,7 @@ def database_status(db: Session = Depends(get_db)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
+# Development endpoint to create tables manually
 @app.post("/api/v1/database/create-tables")
 def create_tables_endpoint():
     """Create database tables (development only)"""
