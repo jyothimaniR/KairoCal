@@ -1,9 +1,13 @@
+# backend/app/main.py
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from app.core.database import get_db, engine
 from app.config import get_settings
 from app.api import users, events
+
+# Import models to ensure they're registered with SQLAlchemy
+from app.models import User, Event, Reminder
 
 settings = get_settings()
 

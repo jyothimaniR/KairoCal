@@ -27,3 +27,11 @@ class BaseModel(Base):
         onupdate=func.now(),
         nullable=False
     )
+
+# Import all models in correct order to ensure proper relationship resolution
+from .user import User
+from .event import Event  
+from .reminder import Reminder
+
+# Make them available for imports
+__all__ = ["BaseModel", "User", "Event", "Reminder"]
