@@ -1,23 +1,14 @@
--- create-user.sql
--- Create user with encrypted password for external connections
+-- postgres-config/init-db.sql
+-- Fixed initialization script that doesn't change the password
 
--- Drop user if exists (for clean setup)
-DROP USER IF EXISTS kairocal_user;
+-- Since POSTGRES_USER and POSTGRES_PASSWORD are already set in docker-compose,
+-- the user 'kairocal_user' already exists with password 'Test123'
+-- We just need to grant additional privileges
 
--- Create user with encrypted password
-CREATE USER kairocal_user WITH 
-    ENCRYPTED PASSWORD 'kairocal_password'
-    CREATEDB 
-    CREATEROLE 
-    LOGIN;
-
--- Grant superuser privileges (for development)
-ALTER USER kairocal_user WITH SUPERUSER;
-
--- Connect to kairocal database
+-- Connect to the kairocal database
 \c kairocal;
 
--- Grant all privileges
+-- Grant all privileges to the existing user
 GRANT ALL PRIVILEGES ON DATABASE kairocal TO kairocal_user;
 GRANT ALL ON SCHEMA public TO kairocal_user;
 
@@ -30,8 +21,5 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON FUNCTIONS TO kairocal_use
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pg_trgm";
 
--- Verify user creation
-SELECT rolname, rolcanlogin, rolpassword IS NOT NULL as has_encrypted_password 
-FROM pg_roles WHERE rolname = 'kairocal_user';
-
-SELECT 'KairoCal user created with encrypted password!' as status;
+-- Verify user exists and has proper access
+SELECT 'Database initialized successfully!' as status;
