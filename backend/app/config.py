@@ -7,11 +7,11 @@ class Settings(BaseSettings):
     app_name: str = "KairoCal"
     debug: bool = True
     
-    # Database - Use IPv4 explicitly (127.0.0.1 instead of localhost)
-    database_url: str = "postgresql://kairocal_user:Test123@127.0.0.1:5432/kairocal"
+    # Database - Will use Docker service name when in container
+    database_url: str = "postgresql://kairocal_user:Test123@postgres:5432/kairocal"
     
     # Redis
-    redis_url: str = "redis://127.0.0.1:6379"
+    redis_url: str = "redis://redis:6379"
     
     # AWS Cognito - Your preserved configuration
     aws_region: str = "eu-west-2"
