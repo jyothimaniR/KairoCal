@@ -1,46 +1,62 @@
+// authService.js - FINAL FIX using signInWithRedirect
 import { Amplify } from 'aws-amplify';
-import { signInWithRedirect, fetchAuthSession } from 'aws-amplify/auth';
+import { signInWithRedirect, getCurrentUser, signOut, fetchAuthSession } from 'aws-amplify/auth';
 import awsconfig from '../config/aws-exports';
 
 Amplify.configure(awsconfig);
 
-// Always explicitly login via Cognito Hosted UI
-export const login = () => {
-  const loginUrl = `https://${awsconfig.oauth.domain}/login?response_type=code&client_id=${awsconfig.aws_user_pools_web_client_id}&redirect_uri=${encodeURIComponent(awsconfig.oauth.redirectSignIn)}`;
-  window.location.assign(loginUrl);
-};
-
-// Explicit logout that clears both local session AND Cognito SSO cookie
-export const logout = () => {
-  sessionStorage.clear();
-  localStorage.clear();
-  
-  // Explicitly redirect to Cognito Hosted UI Logout endpoint
-  const logoutUrl = `https://${awsconfig.oauth.domain}/logout?client_id=${awsconfig.aws_user_pools_web_client_id}&logout_uri=${encodeURIComponent(awsconfig.oauth.redirectSignOut)}`;
-  window.location.assign(logoutUrl);
-};
-
-// Handle redirect after login explicitly
-export const handleAuthRedirect = async () => {
-  const urlParams = new URLSearchParams(window.location.search);
-  if (urlParams.has('code')) {
-    try {
-      const { tokens } = await fetchAuthSession();
-      if (tokens) {
-        sessionStorage.setItem('accessToken', tokens.accessToken.toString());
-        sessionStorage.setItem('idToken', tokens.idToken.toString());
-        window.history.replaceState({}, document.title, '/dashboard');
-        window.location.replace('/dashboard');
-        return tokens;
-      }
-    } catch (error) {
-      console.error('Token exchange error:', error);
-      window.location.replace('/');
-    }
+// Login using signInWithRedirect (CRITICAL FOR AMPLIFY V6)
+export const login = async () => {
+  console.log('🚀 Starting login with signInWithRedirect...');
+  try {
+    await signInWithRedirect();
+  } catch (error) {
+    console.error('❌ Login failed:', error);
   }
 };
 
-// Simple auth check for ProtectedRoute
+// Logout
+export const logout = async () => {
+  console.log('🚪 Logging out...');
+  try {
+    await signOut();
+    sessionStorage.clear();
+    localStorage.clear();
+  } catch (error) {
+    console.error('❌ Logout failed:', error);
+  }
+};
+
+// Check if user is authenticated
 export const isAuthenticated = () => {
-  return !!sessionStorage.getItem('accessToken');
+  return !!sessionStorage.getItem('isAuthenticated');
+};
+
+// Get current user and store auth state
+export const getCurrentAuthUser = async () => {
+  try {
+    console.log('🔍 Checking current user...');
+    
+    const user = await getCurrentUser();
+    console.log('✅ User found:', user.username);
+    
+    const session = await fetchAuthSession();
+    console.log('🎫 Session tokens:', session.tokens ? 'Available' : 'Missing');
+    
+    if (user && session.tokens) {
+      // Store authentication state
+      sessionStorage.setItem('isAuthenticated', 'true');
+      sessionStorage.setItem('accessToken', session.tokens.accessToken.toString());
+      sessionStorage.setItem('idToken', session.tokens.idToken.toString());
+      
+      console.log('✅ Auth state stored in sessionStorage');
+      return { user, session };
+    }
+    
+    return null;
+  } catch (error) {
+    console.log('ℹ️ User not authenticated:', error.message);
+    sessionStorage.clear();
+    return null;
+  }
 };
