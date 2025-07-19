@@ -1,6 +1,3 @@
-// AWS Amplify Configuration for KairoCal
-// This file contains the Cognito configuration for authentication
-
 const awsExports = {
   aws_project_region: "eu-west-2",
   aws_cognito_region: "eu-west-2",
@@ -9,8 +6,8 @@ const awsExports = {
   oauth: {
     domain: "eu-west-2n6vdqdu5n.auth.eu-west-2.amazoncognito.com",
     scope: ["email", "openid", "phone"],
-    redirectSignIn: "http://localhost:5173/",
-    redirectSignOut: "http://localhost:5173/",
+    redirectSignIn: "http://localhost:5173/dashboard",
+    redirectSignOut: "http://localhost:5173/",  
     responseType: "code"
   }
 };
