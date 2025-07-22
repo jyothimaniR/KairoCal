@@ -4,12 +4,146 @@
     <meta charset="UTF-8" />
     <link rel="icon" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>KairoCal</title>
-    <!-- FullCalendar CSS via CDN -->
+    <title>KairoCal - AI Smart Calendar</title>
+    
+    <!-- FullCalendar CSS via CDN - REQUIRED for proper styling -->
     <link href="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.10/main.min.css" rel="stylesheet" />
     <link href="https://cdn.jsdelivr.net/npm/@fullcalendar/daygrid@6.1.10/main.min.css" rel="stylesheet" />
     <link href="https://cdn.jsdelivr.net/npm/@fullcalendar/timegrid@6.1.10/main.min.css" rel="stylesheet" />
     <link href="https://cdn.jsdelivr.net/npm/@fullcalendar/list@6.1.10/main.min.css" rel="stylesheet" />
+    
+    <!-- Custom FullCalendar styling -->
+    <style>
+      /* FullCalendar custom styling */
+      .fc {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      }
+      
+      .fc-header-toolbar {
+        margin-bottom: 1rem !important;
+      }
+      
+      .fc-button {
+        background-color: #4f46e5 !important;
+        border-color: #4f46e5 !important;
+        color: white !important;
+        font-weight: 500 !important;
+        border-radius: 6px !important;
+        padding: 6px 12px !important;
+        font-size: 0.875rem !important;
+      }
+      
+      .fc-button:hover {
+        background-color: #4338ca !important;
+        border-color: #4338ca !important;
+      }
+      
+      .fc-button:focus {
+        box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2) !important;
+      }
+      
+      .fc-button-active {
+        background-color: #3730a3 !important;
+        border-color: #3730a3 !important;
+      }
+      
+      .fc-today-button {
+        background-color: #059669 !important;
+        border-color: #059669 !important;
+      }
+      
+      .fc-today-button:hover {
+        background-color: #047857 !important;
+        border-color: #047857 !important;
+      }
+      
+      .fc-event {
+        border-radius: 4px !important;
+        border: none !important;
+        padding: 2px 4px !important;
+        font-size: 0.75rem !important;
+        font-weight: 500 !important;
+      }
+      
+      .fc-daygrid-event {
+        margin-bottom: 1px !important;
+      }
+      
+      .fc-event-title {
+        font-weight: 500 !important;
+      }
+      
+      .fc-day-today {
+        background-color: rgba(79, 70, 229, 0.05) !important;
+      }
+      
+      .fc-col-header-cell {
+        background-color: #f8fafc !important;
+        border-color: #e2e8f0 !important;
+        font-weight: 600 !important;
+        font-size: 0.75rem !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.025em !important;
+        color: #64748b !important;
+      }
+      
+      .fc-scrollgrid {
+        border-color: #e2e8f0 !important;
+      }
+      
+      .fc-scrollgrid td,
+      .fc-scrollgrid th {
+        border-color: #e2e8f0 !important;
+      }
+      
+      .fc-daygrid-day-number {
+        color: #374151 !important;
+        font-weight: 500 !important;
+        padding: 4px !important;
+      }
+      
+      .fc-day-other .fc-daygrid-day-number {
+        color: #9ca3af !important;
+      }
+      
+      /* List view styling */
+      .fc-list-event-title {
+        font-weight: 500 !important;
+      }
+      
+      .fc-list-event-time {
+        font-weight: 600 !important;
+        color: #4f46e5 !important;
+      }
+      
+      /* Time grid styling */
+      .fc-timegrid-slot-label {
+        font-size: 0.75rem !important;
+        color: #6b7280 !important;
+      }
+      
+      .fc-timegrid-axis-cushion {
+        color: #6b7280 !important;
+      }
+      
+      /* Responsive design */
+      @media (max-width: 768px) {
+        .fc-header-toolbar {
+          flex-direction: column !important;
+          gap: 0.5rem !important;
+        }
+        
+        .fc-toolbar-chunk {
+          display: flex !important;
+          justify-content: center !important;
+        }
+        
+        .fc-button {
+          font-size: 0.75rem !important;
+          padding: 4px 8px !important;
+        }
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>
