@@ -1,60 +1,69 @@
+import { useEffect } from 'react';
+import { Outlet } from 'react-router-dom';
+
 // material-ui
-import { styled } from '@mui/material/styles';
+import { useTheme } from '@mui/material/styles';
+import useMediaQuery from '@mui/material/useMediaQuery';
+import AppBar from '@mui/material/AppBar';
+import Toolbar from '@mui/material/Toolbar';
+import Box from '@mui/material/Box';
 
 // project imports
-import { drawerWidth } from 'store/constant';
+// import Footer from './Footer';
+import Header from './Header';
+import Sidebar from './Sidebar';
+import MainContentStyled from './MainContentStyled';
+// import Customization from '../Customization'; // DISABLED - Remove this line
+import Loader from 'ui-component/Loader';
+import Breadcrumbs from 'ui-component/extended/Breadcrumbs';
 
-// ==============================|| MAIN LAYOUT - STYLED ||============================== //
+import useConfig from 'hooks/useConfig';
+import { handlerDrawerOpen, useGetMenuMaster } from 'api/menu';
 
-const MainContentStyled = styled('main', {
-  shouldForwardProp: (prop) => prop !== 'open' && prop !== 'borderRadius'
-})(({ theme, open, borderRadius }) => ({
-  backgroundColor: 'transparent', // was theme.palette.grey[100]
-  minWidth: '1%',
-  width: '100%',
-  minHeight: 'calc(100vh - 88px)',
-  flexGrow: 1,
-  padding: 20,
-  marginTop: 88,
-  marginRight: 20,
-  borderRadius: `${borderRadius}px`,
-  borderBottomLeftRadius: 0,
-  borderBottomRightRadius: 0,
-  ...(!open && {
-    transition: theme.transitions.create('margin', {
-      easing: theme.transitions.easing.sharp,
-      duration: theme.transitions.duration.shorter + 200
-    }),
-    [theme.breakpoints.up('md')]: {
-      marginLeft: -(drawerWidth - 72),
-      width: `calc(100% - ${drawerWidth}px)`,
-      marginTop: 88
-    }
-  }),
-  ...(open && {
-    transition: theme.transitions.create('margin', {
-      easing: theme.transitions.easing.easeOut,
-      duration: theme.transitions.duration.shorter + 200
-    }),
-    marginLeft: 0,
-    marginTop: 88,
-    width: `calc(100% - ${drawerWidth}px)`,
-    [theme.breakpoints.up('md')]: {
-      marginTop: 88
-    }
-  }),
-  [theme.breakpoints.down('md')]: {
-    marginLeft: 20,
-    padding: 16,
-    marginTop: 88,
-    ...(!open && {
-      width: `calc(100% - ${drawerWidth}px)`
-    })
-  },
-  [theme.breakpoints.down('sm')]: {
-    marginLeft: 10,
-    marginRight: 10
-  }
-}));
+// ==============================|| MAIN LAYOUT ||============================== //
 
-export default MainContentStyled;
+export default function MainLayout() {
+  const theme = useTheme();
+  const downMD = useMediaQuery(theme.breakpoints.down('md'));
+
+  const { borderRadius, miniDrawer } = useConfig();
+  const { menuMaster, menuMasterLoading } = useGetMenuMaster();
+  const drawerOpen = menuMaster?.isDashboardDrawerOpened;
+
+  useEffect(() => {
+    handlerDrawerOpen(!miniDrawer);
+  }, [miniDrawer]);
+
+  useEffect(() => {
+    downMD && handlerDrawerOpen(false);
+  }, [downMD]);
+
+  // horizontal menu-list bar : drawer
+
+  if (menuMasterLoading) return <Loader />;
+
+  return (
+    <Box sx={{ display: 'flex' }}>
+      {/* header */}
+      <AppBar enableColorOnDark position="fixed" color="inherit" elevation={0} sx={{ bgcolor: 'background.default' }}>
+        <Toolbar sx={{ p: 2 }}>
+          <Header />
+        </Toolbar>
+      </AppBar>
+
+      {/* menu / drawer */}
+      <Sidebar />
+
+      {/* main content */}
+      <MainContentStyled {...{ borderRadius, open: drawerOpen }}>
+        <Box sx={{ ...{ px: { xs: 0 } }, minHeight: 'calc(100vh - 128px)', display: 'flex', flexDirection: 'column' }}>
+          {/* breadcrumb */}
+          <Breadcrumbs />
+          <Outlet />
+          {/* <Footer /> */}
+        </Box>
+      </MainContentStyled>
+      {/* <Customization /> */} {/* DISABLED - Remove this line */}
+    </Box>
+  );
+}
