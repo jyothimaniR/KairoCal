@@ -33,6 +33,7 @@
     "swr": "^2.2.0"
   },
   "devDependencies": {
+    "@rollup/rollup-win32-x64-msvc": "^4.45.1",
     "@testing-library/jest-dom": "^5.16.4",
     "@testing-library/react": "^13.4.0",
     "@types/react": "^18.2.45",
@@ -43,6 +44,7 @@
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.0",
     "jest": "^29.5.0",
+    "sass-embedded": "^1.89.2",
     "vite": "^5.0.10"
   }
 }

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { logout } from '../../services/authService';
-import { userMenuItems } from '../../config/userMenu';
+import { logout } from '../../../services/authService';
+import { userMenuItems } from '../../../config/userMenu';
 
 const Topbar = ({ onToggleSidebar }) => {
   const [showUserMenu, setShowUserMenu] = useState(false);
