@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { menuItems } from '../../config/menuItems';
+import menuItems from "menu-items";
 
 const Sidebar = ({ collapsed }) => {
   const navigate = useNavigate();
