@@ -187,92 +187,7 @@ const SearchInput = ({ onSearch, onVoiceInput }) => {
   );
 };
 
-// Conflict Alert Component
-const ConflictAlert = ({ onDismiss }) => (
-  <Box sx={{ 
-    backgroundColor: '#fef3c7',
-    border: '1px solid #f59e0b',
-    borderRadius: '12px',
-    padding: '16px 20px',
-    display: 'flex',
-    alignItems: 'flex-start',
-    gap: '12px',
-    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-    mb: 3
-  }}>
-    <div style={{
-      fontSize: '20px',
-      marginTop: '2px',
-      flexShrink: 0
-    }}>
-      🔔
-    </div>
-
-    <div style={{ flex: 1, minWidth: 0 }}>
-      <div style={{
-        display: 'flex',
-        alignItems: 'flex-start',
-        justifyContent: 'space-between',
-        gap: '12px'
-      }}>
-        <div>
-          <Typography variant="h6" sx={{
-            fontSize: '16px',
-            fontWeight: 600,
-            color: '#92400e',
-            margin: '0 0 4px 0'
-          }}>
-            Conflict Detected
-          </Typography>
-          <Typography variant="body2" sx={{
-            fontSize: '14px',
-            color: '#78350f',
-            margin: '0 0 8px 0',
-            lineHeight: '1.4'
-          }}>
-            "Yoga Class" has been moved to 4:30 PM due to a schedule conflict with "Team Meeting".
-          </Typography>
-          <button
-            style={{
-              background: 'none',
-              border: 'none',
-              color: '#92400e',
-              fontSize: '14px',
-              fontWeight: 600,
-              textDecoration: 'underline',
-              cursor: 'pointer',
-              padding: 0,
-              margin: 0
-            }}
-            onClick={() => alert('This would show conflict resolution interface')}
-          >
-            Review →
-          </button>
-        </div>
-
-        <button
-          onClick={onDismiss}
-          style={{
-            background: 'none',
-            border: 'none',
-            color: '#92400e',
-            fontSize: '18px',
-            cursor: 'pointer',
-            padding: '4px',
-            borderRadius: '4px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            transition: 'background-color 0.2s',
-            flexShrink: 0
-          }}
-        >
-          ✕
-        </button>
-      </div>
-    </div>
-  </Box>
-);
+// REMOVED: ConflictAlert Component - No longer needed
 
 // Upcoming Events Component
 const UpcomingEvents = ({ events = [] }) => {
@@ -557,8 +472,8 @@ const UpcomingEvents = ({ events = [] }) => {
 // Main Dashboard Component
 const Dashboard = () => {
   const [events, setEvents] = useState(mockEvents);
-  const [hasConflict, setHasConflict] = useState(true);
-  const [conflictDismissed, setConflictDismissed] = useState(false);
+  // REMOVED: const [hasConflict, setHasConflict] = useState(true);
+  // REMOVED: const [conflictDismissed, setConflictDismissed] = useState(false);
 
   const handleSearch = (query) => {
     console.log('🔍 Search query:', query);
@@ -594,9 +509,7 @@ const Dashboard = () => {
     }
   };
 
-  const handleConflictDismiss = () => {
-    setConflictDismissed(true);
-  };
+  // REMOVED: const handleConflictDismiss = () => { setConflictDismissed(true); };
 
   return (
     <Box sx={{ 
@@ -610,10 +523,10 @@ const Dashboard = () => {
         onVoiceInput={handleVoiceInput}
       />
 
-      {/* Conflict Alert */}
-      {hasConflict && !conflictDismissed && (
+      {/* REMOVED: Conflict Alert */}
+      {/* {hasConflict && !conflictDismissed && (
         <ConflictAlert onDismiss={handleConflictDismiss} />
-      )}
+      )} */}
 
       {/* Main Content Grid */}
       <Grid container spacing={3}>
