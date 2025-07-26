@@ -8,400 +8,88 @@ const AuthPage = () => {
   const [error, setError] = useState('');
   const [checkingAuth, setCheckingAuth] = useState(true);
 
-  // Check if user is already authenticated
   useEffect(() => {
     const checkAuthentication = async () => {
       try {
         const authData = await getCurrentAuthUser();
         if (authData) {
-          console.log('✅ User already authenticated, redirecting to dashboard');
           navigate('/dashboard', { replace: true });
         }
       } catch (error) {
-        console.log('ℹ️ User not authenticated, showing login page');
+        // User not authenticated, do nothing
       } finally {
         setCheckingAuth(false);
       }
     };
-
     checkAuthentication();
   }, [navigate]);
 
   const handleLogin = async () => {
     setLoading(true);
     setError('');
-    
     try {
-      console.log('🚀 Starting Cognito login flow...');
       await login();
-      // signInWithRedirect will handle the redirect
     } catch (error) {
-      console.error('❌ Login failed:', error);
       setError('Login failed. Please try again.');
       setLoading(false);
     }
   };
 
-  // Show loading while checking authentication
   if (checkingAuth) {
     return (
-      <div style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        color: 'white'
-      }}>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{
-            width: '40px',
-            height: '40px',
-            border: '4px solid rgba(255,255,255,0.3)',
-            borderTop: '4px solid white',
-            borderRadius: '50%',
-            animation: 'spin 1s linear infinite',
-            margin: '0 auto 16px'
-          }}></div>
-          <p>Checking authentication...</p>
-          <style>
-            {`
-              @keyframes spin {
-                0% { transform: rotate(0deg); }
-                100% { transform: rotate(360deg); }
-              }
-            `}
-          </style>
+      <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-indigo-500 via-purple-500 to-blue-400">
+        <div className="text-center text-white">
+          <div className="w-10 h-10 border-4 border-white border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-lg font-medium">Checking authentication...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '20px'
-    }}>
-      {/* Hero Section - Landing Page Features */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: '1fr 1fr',
-        gap: '60px',
-        maxWidth: '1200px',
-        width: '100%',
-        alignItems: 'center'
-      }}>
-        {/* Left Side - Hero Content */}
-        <div style={{ color: 'white' }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            marginBottom: '32px',
-            gap: '16px'
-          }}>
-            <span style={{ fontSize: '56px' }}>📅</span>
-            <h1 style={{ 
-              fontSize: '48px', 
-              margin: 0, 
-              fontWeight: 'bold',
-              textShadow: '0 2px 4px rgba(0,0,0,0.3)'
-            }}>
-              KairoCal
-            </h1>
+    <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-indigo-500 via-purple-500 to-blue-400 px-4">
+      <div className="w-full max-w-md bg-white/90 rounded-3xl shadow-2xl p-8 md:p-12 flex flex-col items-center">
+        <div className="mb-8 flex flex-col items-center">
+          <div className="w-16 h-16 bg-gradient-to-br from-indigo-400 to-purple-500 rounded-2xl flex items-center justify-center shadow-lg mb-4">
+            <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="5" y="10" width="30" height="25" rx="5" fill="#fff" fillOpacity="0.9"/>
+              <rect x="5" y="10" width="30" height="25" rx="5" stroke="#a78bfa" strokeWidth="2"/>
+              <rect x="12" y="5" width="4" height="8" rx="2" fill="#a78bfa"/>
+              <rect x="24" y="5" width="4" height="8" rx="2" fill="#a78bfa"/>
+              <rect x="10" y="18" width="4" height="4" rx="2" fill="#a78bfa"/>
+              <rect x="18" y="18" width="4" height="4" rx="2" fill="#a78bfa"/>
+              <rect x="26" y="18" width="4" height="4" rx="2" fill="#a78bfa"/>
+            </svg>
           </div>
-          
-          <h2 style={{ 
-            fontSize: '32px', 
-            marginBottom: '24px', 
-            fontWeight: 'normal',
-            lineHeight: '1.2'
-          }}>
-            AI-Powered Smart Calendar
-          </h2>
-          
-          <p style={{ 
-            fontSize: '20px', 
-            marginBottom: '40px', 
-            opacity: 0.9,
-            lineHeight: '1.6'
-          }}>
-            Transform how you manage time with intelligent scheduling, natural language processing, and automatic conflict detection.
-          </p>
-
-          {/* Feature List */}
-          <div style={{ marginBottom: '40px' }}>
-            <div style={{
-              display: 'grid',
-              gap: '16px'
-            }}>
-              {[
-                { icon: '🤖', text: 'Natural language event creation' },
-                { icon: '⚡', text: 'Smart conflict detection' },
-                { icon: '🔔', text: 'Intelligent notifications' },
-                { icon: '☁️', text: 'Cloud-native architecture' }
-              ].map((feature, index) => (
-                <div key={index} style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  padding: '12px 20px',
-                  background: 'rgba(255, 255, 255, 0.1)',
-                  borderRadius: '12px',
-                  backdropFilter: 'blur(10px)'
-                }}>
-                  <span style={{ fontSize: '24px' }}>{feature.icon}</span>
-                  <span style={{ fontSize: '16px', fontWeight: '500' }}>{feature.text}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Stats */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(3, 1fr)',
-            gap: '24px',
-            marginTop: '40px'
-          }}>
-            {[
-              { number: '10K+', label: 'Events Scheduled' },
-              { number: '99.9%', label: 'Uptime' },
-              { number: '< 1s', label: 'Response Time' }
-            ].map((stat, index) => (
-              <div key={index} style={{ textAlign: 'center' }}>
-                <div style={{ 
-                  fontSize: '24px', 
-                  fontWeight: 'bold',
-                  marginBottom: '4px'
-                }}>
-                  {stat.number}
-                </div>
-                <div style={{ 
-                  fontSize: '14px', 
-                  opacity: 0.8 
-                }}>
-                  {stat.label}
-                </div>
-              </div>
-            ))}
-          </div>
+          <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-2 text-center tracking-tight">KairoCal</h1>
+          <h2 className="text-lg md:text-xl font-semibold text-indigo-700 mb-4 text-center uppercase tracking-wider">AI-Powered Smart Calendar</h2>
         </div>
-
-        {/* Right Side - Login Card */}
-        <div style={{
-          background: 'white',
-          borderRadius: '20px',
-          padding: '48px',
-          boxShadow: '0 25px 50px rgba(0, 0, 0, 0.15)',
-          textAlign: 'center',
-          maxWidth: '450px',
-          width: '100%',
-          justifySelf: 'center'
-        }}>
-          {/* Login Header */}
-          <div style={{ marginBottom: '32px' }}>
-            <div style={{
-              width: '80px',
-              height: '80px',
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              borderRadius: '20px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto 24px',
-              color: 'white',
-              fontSize: '32px'
-            }}>
-              📅
-            </div>
-            
-            <h1 style={{
-              fontSize: '28px',
-              fontWeight: 'bold',
-              color: '#1f2937',
-              margin: '0 0 8px 0'
-            }}>
-              Welcome Back
-            </h1>
-            <p style={{
-              color: '#6b7280',
-              fontSize: '16px',
-              margin: 0
-            }}>
-              Sign in to access your smart calendar
-            </p>
+        <p className="text-gray-600 text-center mb-8 text-base md:text-lg leading-relaxed">
+          Transform how you manage time with intelligent scheduling,<br />
+          natural language processing, and automatic conflict detection.
+        </p>
+        {error && (
+          <div className="mb-4 w-full p-3 bg-red-50 border border-red-200 text-red-700 rounded">
+            <p className="font-semibold">Authentication Error</p>
+            <p className="text-sm">{error}</p>
           </div>
-
-          {/* Error Message */}
-          {error && (
-            <div style={{
-              backgroundColor: '#fee2e2',
-              border: '1px solid #fecaca',
-              color: '#dc2626',
-              padding: '16px',
-              borderRadius: '12px',
-              marginBottom: '24px',
-              fontSize: '14px',
-              textAlign: 'left'
-            }}>
-              <strong>⚠️ Authentication Error</strong>
-              <br />
-              {error}
-            </div>
-          )}
-
-          {/* Login Button */}
-          <button
-            onClick={handleLogin}
-            disabled={loading}
-            style={{
-              width: '100%',
-              padding: '16px 24px',
-              backgroundColor: loading ? '#9ca3af' : '#4f46e5',
-              color: 'white',
-              border: 'none',
-              borderRadius: '12px',
-              fontSize: '16px',
-              fontWeight: '600',
-              cursor: loading ? 'not-allowed' : 'pointer',
-              transition: 'all 0.3s',
-              marginBottom: '24px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '12px',
-              boxShadow: '0 4px 12px rgba(79, 70, 229, 0.4)'
-            }}
-            onMouseOver={(e) => !loading && (e.target.style.backgroundColor = '#4338ca')}
-            onMouseOut={(e) => !loading && (e.target.style.backgroundColor = '#4f46e5')}
-          >
-            {loading ? (
-              <>
-                <div style={{
-                  width: '20px',
-                  height: '20px',
-                  border: '2px solid rgba(255,255,255,0.3)',
-                  borderTop: '2px solid white',
-                  borderRadius: '50%',
-                  animation: 'spin 1s linear infinite'
-                }}></div>
-                Signing in...
-              </>
-            ) : (
-              <>
-                🔐 Sign in with AWS Cognito
-              </>
-            )}
-          </button>
-
-          {/* Divider */}
-          <div style={{
-            position: 'relative',
-            margin: '24px 0',
-            textAlign: 'center'
-          }}>
-            <div style={{
-              height: '1px',
-              background: '#e5e7eb'
-            }}></div>
-            <span style={{
-              position: 'absolute',
-              top: '-10px',
-              left: '50%',
-              transform: 'translateX(-50%)',
-              background: 'white',
-              padding: '0 16px',
-              color: '#6b7280',
-              fontSize: '14px'
-            }}>
-              Coming Soon
+        )}
+        <button
+          onClick={handleLogin}
+          disabled={loading}
+          className={`w-full py-4 px-8 text-lg font-bold rounded-full shadow-md transition-all duration-200 flex items-center justify-center gap-3
+            ${loading ? 'bg-gray-400 text-white cursor-not-allowed' : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:scale-105 hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-indigo-300'}`}
+        >
+          {loading ? (
+            <span className="flex items-center justify-center gap-2">
+              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+              Starting...
             </span>
-          </div>
-
-          {/* Social Login Buttons (Disabled) */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <button
-              disabled
-              style={{
-                width: '100%',
-                padding: '12px 24px',
-                backgroundColor: '#f9fafb',
-                color: '#9ca3af',
-                border: '1px solid #e5e7eb',
-                borderRadius: '8px',
-                fontSize: '14px',
-                cursor: 'not-allowed',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px'
-              }}
-            >
-              🔗 Continue with Google
-            </button>
-            
-            <button
-              disabled
-              style={{
-                width: '100%',
-                padding: '12px 24px',
-                backgroundColor: '#f9fafb',
-                color: '#9ca3af',
-                border: '1px solid #e5e7eb',
-                borderRadius: '8px',
-                fontSize: '14px',
-                cursor: 'not-allowed',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px'
-              }}
-            >
-              🔗 Continue with Microsoft
-            </button>
-          </div>
-
-          {/* Footer */}
-          <div style={{
-            marginTop: '32px',
-            paddingTop: '24px',
-            borderTop: '1px solid #f3f4f6',
-            textAlign: 'center'
-          }}>
-            <p style={{
-              fontSize: '12px',
-              color: '#9ca3af',
-              margin: 0
-            }}>
-              By signing in, you agree to our{' '}
-              <a href="#" style={{ color: '#4f46e5', textDecoration: 'none' }}>Terms</a>
-              {' '}and{' '}
-              <a href="#" style={{ color: '#4f46e5', textDecoration: 'none' }}>Privacy Policy</a>
-            </p>
-          </div>
-        </div>
+          ) : (
+            'Get Started'
+          )}
+        </button>
       </div>
-
-      <style>
-        {`
-          @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-          }
-          
-          @media (max-width: 768px) {
-            .hero-grid {
-              grid-template-columns: 1fr !important;
-              gap: 40px !important;
-              text-align: center !important;
-            }
-          }
-        `}
-      </style>
     </div>
   );
 };
