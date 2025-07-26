@@ -1,9 +1,8 @@
-# backend/app/api/users.py - Updated with Authentication
+# backend/app/api/users.py - Simplified without authentication
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from typing import List, Dict, Any
+from typing import List
 from app.core.database import get_db
-from app.core.auth import get_current_user
 from app.models.user import User
 from app.schemas import UserCreate, UserUpdate, UserResponse
 from uuid import UUID
@@ -13,17 +12,9 @@ router = APIRouter(prefix="/api/v1/users", tags=["users"])
 @router.post("/", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 def create_user(
     user_data: UserCreate, 
-    db: Session = Depends(get_db), 
-    current_user: Dict[str, Any] = Depends(get_current_user)
+    db: Session = Depends(get_db)
 ):
-    """Create a new user (must match authenticated user)"""
-    # Verify the user is creating their own profile
-    if user_data.cognito_sub != current_user["cognito_sub"]:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, 
-            detail="You can only create your own user profile"
-        )
-    
+    """Create a new user (simplified - no auth required for now)"""
     # Check if user already exists
     existing_user = db.query(User).filter(User.cognito_sub == user_data.cognito_sub).first()
     if existing_user:
@@ -41,11 +32,11 @@ def create_user(
 
 @router.get("/me", response_model=UserResponse)
 def get_current_user_profile(
-    db: Session = Depends(get_db), 
-    current_user: Dict[str, Any] = Depends(get_current_user)
+    cognito_sub: str,
+    db: Session = Depends(get_db)
 ):
-    """Get current authenticated user's profile"""
-    user = db.query(User).filter(User.cognito_sub == current_user["cognito_sub"]).first()
+    """Get user profile by cognito_sub (simplified)"""
+    user = db.query(User).filter(User.cognito_sub == cognito_sub).first()
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, 
@@ -55,12 +46,12 @@ def get_current_user_profile(
 
 @router.put("/me", response_model=UserResponse)
 def update_current_user(
+    cognito_sub: str,
     user_data: UserUpdate, 
-    db: Session = Depends(get_db), 
-    current_user: Dict[str, Any] = Depends(get_current_user)
+    db: Session = Depends(get_db)
 ):
-    """Update current authenticated user's profile"""
-    user = db.query(User).filter(User.cognito_sub == current_user["cognito_sub"]).first()
+    """Update user profile by cognito_sub (simplified)"""
+    user = db.query(User).filter(User.cognito_sub == cognito_sub).first()
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, 
@@ -77,11 +68,11 @@ def update_current_user(
 
 @router.delete("/me")
 def delete_current_user(
-    db: Session = Depends(get_db), 
-    current_user: Dict[str, Any] = Depends(get_current_user)
+    cognito_sub: str,
+    db: Session = Depends(get_db)
 ):
-    """Delete current authenticated user's profile"""
-    user = db.query(User).filter(User.cognito_sub == current_user["cognito_sub"]).first()
+    """Delete user profile by cognito_sub (simplified)"""
+    user = db.query(User).filter(User.cognito_sub == cognito_sub).first()
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, 
