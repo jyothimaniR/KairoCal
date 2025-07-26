@@ -40,8 +40,6 @@ services:
       DATABASE_URL: postgresql://kairocal_user:Test123@postgres:5432/kairocal
       REDIS_URL: redis://redis:6379
       AWS_REGION: eu-west-2
-      COGNITO_USER_POOL_ID: eu-west-2_n6vDQdu5N
-      COGNITO_APP_CLIENT_ID: cncih8g9fhdcnirv8q3vjht7g
       DEBUG: "true"
     ports:
       - "8000:8000"

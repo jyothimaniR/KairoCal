@@ -1,10 +1,9 @@
-# backend/app/api/events.py - Updated with Authentication
+# backend/app/api/events.py - Simplified without authentication
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from typing import List, Optional, Dict, Any
+from typing import List, Optional
 from datetime import datetime
 from app.core.database import get_db
-from app.core.auth import get_current_user
 from app.models.event import Event
 from app.models.user import User
 from app.schemas import EventCreate, EventUpdate, EventResponse, EventWithReminders
@@ -24,14 +23,14 @@ def get_user_from_cognito(cognito_sub: str, db: Session) -> User:
 
 @router.post("/", response_model=EventResponse, status_code=status.HTTP_201_CREATED)
 def create_event(
+    cognito_sub: str,
     event_data: EventCreate, 
-    db: Session = Depends(get_db), 
-    current_user: Dict[str, Any] = Depends(get_current_user)
+    db: Session = Depends(get_db)
 ):
-    """Create a new event for the authenticated user"""
-    user = get_user_from_cognito(current_user["cognito_sub"], db)
+    """Create a new event for the specified user"""
+    user = get_user_from_cognito(cognito_sub, db)
     
-    # Create event associated with the authenticated user
+    # Create event associated with the user
     event = Event(**event_data.dict(), user_id=user.id)
     db.add(event)
     db.commit()
@@ -40,17 +39,17 @@ def create_event(
 
 @router.get("/", response_model=List[EventResponse])
 def list_my_events(
+    cognito_sub: str,
     start_date: Optional[datetime] = None,
     end_date: Optional[datetime] = None,
     skip: int = 0, 
     limit: int = 100, 
-    db: Session = Depends(get_db), 
-    current_user: Dict[str, Any] = Depends(get_current_user)
+    db: Session = Depends(get_db)
 ):
-    """List all events for the authenticated user"""
-    user = get_user_from_cognito(current_user["cognito_sub"], db)
+    """List all events for the specified user"""
+    user = get_user_from_cognito(cognito_sub, db)
     
-    # Query events only for the authenticated user
+    # Query events only for the user
     query = db.query(Event).filter(Event.user_id == user.id)
     
     # Apply date filters if provided
@@ -65,11 +64,11 @@ def list_my_events(
 @router.get("/{event_id}", response_model=EventWithReminders)
 def get_event(
     event_id: UUID, 
-    db: Session = Depends(get_db), 
-    current_user: Dict[str, Any] = Depends(get_current_user)
+    cognito_sub: str,
+    db: Session = Depends(get_db)
 ):
-    """Get a specific event (only if it belongs to the authenticated user)"""
-    user = get_user_from_cognito(current_user["cognito_sub"], db)
+    """Get a specific event (only if it belongs to the specified user)"""
+    user = get_user_from_cognito(cognito_sub, db)
     
     event = db.query(Event).filter(
         Event.id == event_id, 
@@ -86,12 +85,12 @@ def get_event(
 @router.put("/{event_id}", response_model=EventResponse)
 def update_event(
     event_id: UUID, 
+    cognito_sub: str,
     event_data: EventUpdate, 
-    db: Session = Depends(get_db), 
-    current_user: Dict[str, Any] = Depends(get_current_user)
+    db: Session = Depends(get_db)
 ):
-    """Update an event (only if it belongs to the authenticated user)"""
-    user = get_user_from_cognito(current_user["cognito_sub"], db)
+    """Update an event (only if it belongs to the specified user)"""
+    user = get_user_from_cognito(cognito_sub, db)
     
     event = db.query(Event).filter(
         Event.id == event_id, 
@@ -115,11 +114,11 @@ def update_event(
 @router.delete("/{event_id}")
 def delete_event(
     event_id: UUID, 
-    db: Session = Depends(get_db), 
-    current_user: Dict[str, Any] = Depends(get_current_user)
+    cognito_sub: str,
+    db: Session = Depends(get_db)
 ):
-    """Delete an event (only if it belongs to the authenticated user)"""
-    user = get_user_from_cognito(current_user["cognito_sub"], db)
+    """Delete an event (only if it belongs to the specified user)"""
+    user = get_user_from_cognito(cognito_sub, db)
     
     event = db.query(Event).filter(
         Event.id == event_id, 
