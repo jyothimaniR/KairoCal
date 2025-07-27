@@ -1,6 +1,4 @@
 # docker-compose.yml
-version: '3.8'
-
 services:
   postgres:
     image: postgres:15-alpine
@@ -41,13 +39,18 @@ services:
       REDIS_URL: redis://redis:6379
       AWS_REGION: eu-west-2
       DEBUG: "true"
+      COGNITO_USER_POOL_ID: ""
+      COGNITO_APP_CLIENT_ID: ""
     ports:
       - "8000:8000"
     depends_on:
       postgres:
         condition: service_healthy
     volumes:
-      - ./backend:/app
+      # ✅ FIXED: Only mount the app code directory, not the entire backend
+      - ./backend/app:/app/app
+      # ✅ Keep requirements accessible for potential updates
+      - ./backend/requirements:/app/requirements
     networks:
       - kairocal-network
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload

@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from app.core.database import get_db, engine
 from app.config import get_settings
-from app.api import users, events
+from app.api import users, events, reminders, nlp  # Added nlp import
 
 # Import models to ensure they're registered with SQLAlchemy
 from app.models import User, Event, Reminder
@@ -13,7 +13,7 @@ settings = get_settings()
 
 app = FastAPI(
     title="KairoCal API",
-    description="AI-Powered Smart Calendar System",
+    description="AI-Powered Smart Calendar System with Natural Language Processing",
     version="1.0.0",
     debug=settings.debug
 )
@@ -30,13 +30,22 @@ app.add_middleware(
 # Include API routers
 app.include_router(users.router)
 app.include_router(events.router)
+app.include_router(reminders.router)
+app.include_router(nlp.router)  # Added NLP router
 
 @app.get("/")
 def read_root():
     return {
         "message": "KairoCal API is running!",
         "status": "healthy",
-        "version": "1.0.0"
+        "version": "1.0.0",
+        "features": [
+            "User Management",
+            "Event Scheduling", 
+            "Smart Reminders",
+            "🧠 Natural Language Processing",  # New feature!
+            "🤖 AI-Powered Event Creation"     # New feature!
+        ]
     }
 
 @app.get("/health")
@@ -44,7 +53,8 @@ def health_check():
     return {
         "status": "healthy",
         "service": "kairocal-api",
-        "database": "connected"
+        "database": "connected",
+        "nlp": "operational"
     }
 
 @app.get("/api/v1/status")
@@ -57,7 +67,8 @@ def api_status():
             "User Management",
             "Event Scheduling", 
             "Smart Reminders",
-            "NLP Processing (Coming Soon)"
+            "🧠 Natural Language Processing",
+            "🤖 AI-Powered Event Creation"
         ]
     }
 
