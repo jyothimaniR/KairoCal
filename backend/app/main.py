@@ -4,7 +4,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from app.core.database import get_db, engine
 from app.config import get_settings
-from app.api import users, events, reminders, nlp  # Added nlp import
+from app.api import users, events, reminders, nlp  # Existing routers
+from app.api.analytics import router as analytics_router  # ✅ Added analytics router
 
 # Import models to ensure they're registered with SQLAlchemy
 from app.models import User, Event, Reminder
@@ -31,7 +32,8 @@ app.add_middleware(
 app.include_router(users.router)
 app.include_router(events.router)
 app.include_router(reminders.router)
-app.include_router(nlp.router)  # Added NLP router
+app.include_router(nlp.router)           # ✅ Existing NLP router
+app.include_router(analytics_router)     # ✅ New analytics router added
 
 @app.get("/")
 def read_root():
@@ -44,7 +46,7 @@ def read_root():
             "Event Scheduling", 
             "Smart Reminders",
             "🧠 Natural Language Processing",  # New feature!
-            "🤖 AI-Powered Event Creation"     # New feature!
+            "🤖 AI-Powered Event Creation"
         ]
     }
 
