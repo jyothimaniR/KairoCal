@@ -57,3 +57,15 @@ Thumbs.db
 # Project specific
 backend/app/config/local_settings.py
 frontend/src/config/local_config.js
+
+# Large ML models (use Git LFS or download separately)
+backend/models/bert_priority_classifier/pytorch_model.bin
+backend/models/bert_priority_classifier/model.safetensors
+backend/models/bert_priority_classifier/tf_model.h5
+backend/models/
+*.bin
+*.safetensors
+*.h5
+*.pkl
+*.pt
+*.pth
