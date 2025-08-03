@@ -11,6 +11,7 @@ import torch
 from typing import Optional, Dict, Any
 from functools import lru_cache
 from datetime import datetime
+from pathlib import Path
 
 from app.nlp.bert_priority_classifier import AdvancedEventPriorityClassifier
 from app.config import get_settings
@@ -20,6 +21,20 @@ logger = logging.getLogger(__name__)
 class ModelLoadError(Exception):
     """Custom exception for model loading errors"""
     pass
+
+def check_model_files_exist() -> bool:
+    """Check if required model files exist"""
+    model_dir = Path("backend/models/bert_priority_classifier")
+    required_files = ["pytorch_model.bin", "config.json", "tokenizer.json"]
+    
+    if not model_dir.exists():
+        return False
+        
+    for file_name in required_files:
+        if not (model_dir / file_name).exists():
+            return False
+    
+    return True
 
 class BERTModelLoader:
     """
