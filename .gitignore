@@ -58,14 +58,37 @@ Thumbs.db
 backend/app/config/local_settings.py
 frontend/src/config/local_config.js
 
-# Large ML models (use Git LFS or download separately)
+# Large ML models and data files (share via external methods)
+# BERT Priority Classifier Models
 backend/models/bert_priority_classifier/pytorch_model.bin
 backend/models/bert_priority_classifier/model.safetensors
 backend/models/bert_priority_classifier/tf_model.h5
-backend/models/
+
+# All large model files (>25MB)
 *.bin
 *.safetensors
 *.h5
 *.pkl
 *.pt
 *.pth
+*.onnx
+*.tflite
+*.pb
+
+# Training data and checkpoints
+backend/models/training_data/
+backend/models/checkpoints/
+backend/data/training/
+backend/data/models/
+
+# Large datasets
+*.csv
+*.json
+!**/config.json
+!**/package.json
+!**/tsconfig.json
+
+# Model weights and embeddings
+**/embeddings/
+**/weights/
+**/checkpoints/
