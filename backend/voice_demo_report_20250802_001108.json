@@ -1,0 +1,410 @@
+{
+  "demo_summary": {
+    "timestamp": "2025-08-02T00:11:08.763440",
+    "total_commands": 5,
+    "successful_commands": 0,
+    "success_rate": 0.0,
+    "priority_level_stats": {
+      "Critical Priority (5)": {
+        "total": 1,
+        "successful": 0
+      },
+      "High Priority (4)": {
+        "total": 1,
+        "successful": 0
+      },
+      "Medium Priority (3)": {
+        "total": 1,
+        "successful": 0
+      },
+      "Low Priority (2)": {
+        "total": 1,
+        "successful": 0
+      },
+      "Very Low Priority (1)": {
+        "total": 1,
+        "successful": 0
+      }
+    },
+    "processing_step_stats": {
+      "transcription": {
+        "success": 5,
+        "total": 5
+      },
+      "analysis": {
+        "success": 5,
+        "total": 5
+      },
+      "event_creation": {
+        "success": 0,
+        "total": 5
+      }
+    }
+  },
+  "bert_analysis": {
+    "commands_classified": 5,
+    "average_priority": 2.8,
+    "average_confidence": 0.6,
+    "priority_distribution": {
+      "1": 1,
+      "2": 1,
+      "3": 2,
+      "4": 0,
+      "5": 1
+    }
+  },
+  "detailed_results": [
+    {
+      "voice_text": "URGENT: Emergency board meeting now in the main conference room",
+      "category": "Critical Priority (5)",
+      "timestamp": "2025-08-02T00:10:19.464078",
+      "processing_steps": {
+        "transcription": {
+          "success": true,
+          "cleaned_text": "URGENT: emergency board meeting now in the main conference room",
+          "confidence": 0.8500000000000001,
+          "processing_time": 0.0,
+          "metadata": {
+            "original_word_count": 10,
+            "cleaned_word_count": 10,
+            "words_removed": 0,
+            "language": "en",
+            "cleaning_confidence": 0.9,
+            "transcription_confidence": 0.8
+          }
+        },
+        "analysis": {
+          "success": true,
+          "nlp_analysis": {
+            "title": "Meeting",
+            "description": "Event created from voice input: urgent: emergency board meeting now in the main conference room",
+            "start_time": "2025-08-02T09:00:23.628406",
+            "end_time": "2025-08-02T10:00:23.628406",
+            "location": "The Main Conference Room",
+            "priority": 5,
+            "event_type": "meeting",
+            "participants": [],
+            "duration": 60,
+            "confidence": 1.0,
+            "processing_time_ms": 0.0,
+            "original_voice_text": "URGENT: emergency board meeting now in the main conference room",
+            "cleaned_text": "urgent: emergency board meeting now in the main conference room"
+          },
+          "bert_analysis": {
+            "priority": 5,
+            "confidence": 0.6,
+            "available": false
+          },
+          "recommended_event": {
+            "title": "Meeting",
+            "description": "URGENT: emergency board meeting now in the main conference room",
+            "priority": 5,
+            "confidence": 0.6
+          }
+        },
+        "event_creation": {
+          "success": false,
+          "event_id": null,
+          "event_data": {},
+          "bert_classification": {
+            "priority": 5,
+            "confidence": 0.6,
+            "model_used": "Fallback",
+            "final_priority": 5,
+            "priority_override": false
+          },
+          "processing_details": {
+            "total_processing_time": 2.69948,
+            "voice_cleaning_time": 0.0,
+            "words_removed": 0,
+            "auto_scheduled": true
+          },
+          "message": "\u274c Failed to create event: (psycopg2.OperationalError) could not translate host name \"postgres\" to address: No such host is known. \n\n(Background on this error at: https://sqlalche.me/e/20/e3q8)"
+        }
+      },
+      "overall_success": false
+    },
+    {
+      "voice_text": "Important client presentation tomorrow at 2pm in conference room A",
+      "category": "High Priority (4)",
+      "timestamp": "2025-08-02T00:10:29.378506",
+      "processing_steps": {
+        "transcription": {
+          "success": true,
+          "cleaned_text": "HIGH_PRIORITY client presentation 2025-08-03 at 2pm in conference room a",
+          "confidence": 0.8500000000000001,
+          "processing_time": 0.0,
+          "metadata": {
+            "original_word_count": 10,
+            "cleaned_word_count": 10,
+            "words_removed": 0,
+            "language": "en",
+            "cleaning_confidence": 0.9,
+            "transcription_confidence": 0.8
+          }
+        },
+        "analysis": {
+          "success": true,
+          "nlp_analysis": {
+            "title": "Meeting",
+            "description": "Event created from voice input: high_priority client presentation 2025-08-03 at 2pm in conference room a",
+            "start_time": "2025-08-02T14:00:00",
+            "end_time": "2025-08-02T15:00:00",
+            "location": "2Pm In Conference Room A",
+            "priority": 3,
+            "event_type": "meeting",
+            "participants": [],
+            "duration": 60,
+            "confidence": 1.0,
+            "processing_time_ms": 0.0,
+            "original_voice_text": "HIGH_PRIORITY client presentation 2025-08-03 at 2pm in conference room a",
+            "cleaned_text": "high_priority client presentation 2025-08-03 at 2pm in conference room a"
+          },
+          "bert_analysis": {
+            "priority": 3,
+            "confidence": 0.6,
+            "available": false
+          },
+          "recommended_event": {
+            "title": "Meeting",
+            "description": "HIGH_PRIORITY client presentation 2025-08-03 at 2pm in conference room a",
+            "priority": 3,
+            "confidence": 0.6
+          }
+        },
+        "event_creation": {
+          "success": false,
+          "event_id": null,
+          "event_data": {},
+          "bert_classification": {
+            "priority": 3,
+            "confidence": 0.6,
+            "model_used": "Fallback",
+            "final_priority": 3,
+            "priority_override": false
+          },
+          "processing_details": {
+            "total_processing_time": 2.700732,
+            "voice_cleaning_time": 0.0,
+            "words_removed": 0,
+            "auto_scheduled": true
+          },
+          "message": "\u274c Failed to create event: (psycopg2.OperationalError) could not translate host name \"postgres\" to address: No such host is known. \n\n(Background on this error at: https://sqlalche.me/e/20/e3q8)"
+        }
+      },
+      "overall_success": false
+    },
+    {
+      "voice_text": "Weekly team standup meeting next Monday at 9am",
+      "category": "Medium Priority (3)",
+      "timestamp": "2025-08-02T00:10:39.237813",
+      "processing_steps": {
+        "transcription": {
+          "success": true,
+          "cleaned_text": "weekly team standup meeting next monday at 9am",
+          "confidence": 0.8500000000000001,
+          "processing_time": 0.0,
+          "metadata": {
+            "original_word_count": 8,
+            "cleaned_word_count": 8,
+            "words_removed": 0,
+            "language": "en",
+            "cleaning_confidence": 0.9,
+            "transcription_confidence": 0.8
+          }
+        },
+        "analysis": {
+          "success": true,
+          "nlp_analysis": {
+            "title": "Meeting",
+            "description": "Event created from voice input: weekly team standup meeting next monday at 9am",
+            "start_time": "2025-08-02T09:00:00",
+            "end_time": "2025-08-02T10:00:00",
+            "location": "9Am",
+            "priority": 3,
+            "event_type": "meeting",
+            "participants": [],
+            "duration": 60,
+            "confidence": 1.0,
+            "processing_time_ms": 2.005338668823242,
+            "original_voice_text": "weekly team standup meeting next monday at 9am",
+            "cleaned_text": "weekly team standup meeting next monday at 9am"
+          },
+          "bert_analysis": {
+            "priority": 3,
+            "confidence": 0.6,
+            "available": false
+          },
+          "recommended_event": {
+            "title": "Meeting",
+            "description": "weekly team standup meeting next monday at 9am",
+            "priority": 3,
+            "confidence": 0.6
+          }
+        },
+        "event_creation": {
+          "success": false,
+          "event_id": null,
+          "event_data": {},
+          "bert_classification": {
+            "priority": 3,
+            "confidence": 0.6,
+            "model_used": "Fallback",
+            "final_priority": 3,
+            "priority_override": false
+          },
+          "processing_details": {
+            "total_processing_time": 2.705137,
+            "voice_cleaning_time": 0.0,
+            "words_removed": 0,
+            "auto_scheduled": true
+          },
+          "message": "\u274c Failed to create event: (psycopg2.OperationalError) could not translate host name \"postgres\" to address: No such host is known. \n\n(Background on this error at: https://sqlalche.me/e/20/e3q8)"
+        }
+      },
+      "overall_success": false
+    },
+    {
+      "voice_text": "Optional workshop on productivity techniques next week",
+      "category": "Low Priority (2)",
+      "timestamp": "2025-08-02T00:10:49.064496",
+      "processing_steps": {
+        "transcription": {
+          "success": true,
+          "cleaned_text": "optional workshop on productivity techniques 2025-08-09",
+          "confidence": 0.8500000000000001,
+          "processing_time": 0.0,
+          "metadata": {
+            "original_word_count": 7,
+            "cleaned_word_count": 6,
+            "words_removed": 1,
+            "language": "en",
+            "cleaning_confidence": 0.9,
+            "transcription_confidence": 0.8
+          }
+        },
+        "analysis": {
+          "success": true,
+          "nlp_analysis": {
+            "title": "Optional Workshop On Productivity",
+            "description": "Event created from voice input: optional workshop on productivity techniques 2025-08-09",
+            "start_time": "2025-08-02T09:00:00",
+            "end_time": "2025-08-02T10:00:00",
+            "location": null,
+            "priority": 2,
+            "event_type": "event",
+            "participants": [],
+            "duration": 60,
+            "confidence": 0.9,
+            "processing_time_ms": 6.474733352661133,
+            "original_voice_text": "optional workshop on productivity techniques 2025-08-09",
+            "cleaned_text": "optional workshop on productivity techniques 2025-08-09"
+          },
+          "bert_analysis": {
+            "priority": 2,
+            "confidence": 0.6,
+            "available": false
+          },
+          "recommended_event": {
+            "title": "Optional Workshop On Productivity",
+            "description": "optional workshop on productivity techniques 2025-08-09",
+            "priority": 2,
+            "confidence": 0.6
+          }
+        },
+        "event_creation": {
+          "success": false,
+          "event_id": null,
+          "event_data": {},
+          "bert_classification": {
+            "priority": 2,
+            "confidence": 0.6,
+            "model_used": "Fallback",
+            "final_priority": 2,
+            "priority_override": false
+          },
+          "processing_details": {
+            "total_processing_time": 2.687275,
+            "voice_cleaning_time": 0.0,
+            "words_removed": 1,
+            "auto_scheduled": true
+          },
+          "message": "\u274c Failed to create event: (psycopg2.OperationalError) could not translate host name \"postgres\" to address: No such host is known. \n\n(Background on this error at: https://sqlalche.me/e/20/e3q8)"
+        }
+      },
+      "overall_success": false
+    },
+    {
+      "voice_text": "Informal coffee break with colleagues in 30 minutes",
+      "category": "Very Low Priority (1)",
+      "timestamp": "2025-08-02T00:10:58.886439",
+      "processing_steps": {
+        "transcription": {
+          "success": true,
+          "cleaned_text": "informal coffee break with colleagues in 30 minutes",
+          "confidence": 0.8500000000000001,
+          "processing_time": 0.0,
+          "metadata": {
+            "original_word_count": 8,
+            "cleaned_word_count": 8,
+            "words_removed": 0,
+            "language": "en",
+            "cleaning_confidence": 0.9,
+            "transcription_confidence": 0.8
+          }
+        },
+        "analysis": {
+          "success": true,
+          "nlp_analysis": {
+            "title": "Social",
+            "description": "Event created from voice input: informal coffee break with colleagues in 30 minutes",
+            "start_time": "2025-08-02T09:00:00",
+            "end_time": "2025-08-02T10:00:00",
+            "location": "30 Minutes",
+            "priority": 1,
+            "event_type": "social",
+            "participants": [
+              "colleagues"
+            ],
+            "duration": 60,
+            "confidence": 1.0,
+            "processing_time_ms": 0.0,
+            "original_voice_text": "informal coffee break with colleagues in 30 minutes",
+            "cleaned_text": "informal coffee break with colleagues in 30 minutes"
+          },
+          "bert_analysis": {
+            "priority": 1,
+            "confidence": 0.6,
+            "available": false
+          },
+          "recommended_event": {
+            "title": "Social",
+            "description": "informal coffee break with colleagues in 30 minutes",
+            "priority": 1,
+            "confidence": 0.6
+          }
+        },
+        "event_creation": {
+          "success": false,
+          "event_id": null,
+          "event_data": {},
+          "bert_classification": {
+            "priority": 1,
+            "confidence": 0.6,
+            "model_used": "Fallback",
+            "final_priority": 1,
+            "priority_override": false
+          },
+          "processing_details": {
+            "total_processing_time": 2.681341,
+            "voice_cleaning_time": 0.0,
+            "words_removed": 0,
+            "auto_scheduled": true
+          },
+          "message": "\u274c Failed to create event: (psycopg2.OperationalError) could not translate host name \"postgres\" to address: No such host is known. \n\n(Background on this error at: https://sqlalche.me/e/20/e3q8)"
+        }
+      },
+      "overall_success": false
+    }
+  ]
+}

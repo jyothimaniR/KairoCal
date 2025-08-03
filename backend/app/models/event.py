@@ -1,5 +1,5 @@
 # backend/app/models/event.py
-from sqlalchemy import Column, String, Text, DateTime, Boolean, ForeignKey
+from sqlalchemy import Column, String, Text, DateTime, Boolean, ForeignKey, Integer, Float
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from app.models import BaseModel
@@ -25,6 +25,19 @@ class Event(BaseModel):
     
     # Recurrence rule (for repeating events)
     recurrence_rule = Column(String(255), nullable=True)
+    
+    # Priority classification fields
+    priority_level = Column(Integer, default=3, nullable=False)  # Default: Medium
+    priority_confidence = Column(Float, default=0.0, nullable=False)
+    classification_method = Column(String(50), default='manual', nullable=False)  # manual, bert, rule_based
+    
+    # Analytics fields for productivity insights
+    meeting_outcome = Column(String(50), default='neutral', nullable=False)  # productive, waste, neutral
+    effectiveness_rating = Column(Integer, default=3, nullable=False)  # 1-5 scale
+    energy_level = Column(Integer, default=3, nullable=False)  # 1-5 scale
+    created_via = Column(String(20), default='manual', nullable=False)  # voice, text, manual, imported
+    actual_duration = Column(Integer, nullable=True)  # Actual duration in minutes
+    planned_duration = Column(Integer, nullable=True)  # Planned duration in minutes
     
     # Relationships
     user = relationship("User", back_populates="events")

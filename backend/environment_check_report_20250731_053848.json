@@ -1,0 +1,85 @@
+{
+  "timestamp": "2025-07-31T05:38:48.484219",
+  "readiness": "NOT READY",
+  "summary": {
+    "passed": 3,
+    "failed": 2,
+    "warnings": 2,
+    "total": 7
+  },
+  "checks": [
+    {
+      "check": "Python Version",
+      "status": "PASS",
+      "message": "Python 3.11.0 is compatible",
+      "details": {
+        "required": "3.8+",
+        "actual": "3.11.0"
+      }
+    },
+    {
+      "check": "Dependencies",
+      "status": "FAIL",
+      "message": "Missing packages: scikit-learn, pandas",
+      "details": {
+        "installed": {
+          "torch": "2.7.1+cpu",
+          "transformers": "4.35.2",
+          "numpy": "1.26.4",
+          "fastapi": "0.104.1",
+          "sqlalchemy": "2.0.23"
+        },
+        "missing": [
+          "scikit-learn",
+          "pandas"
+        ]
+      }
+    },
+    {
+      "check": "GPU/CUDA",
+      "status": "WARNING",
+      "message": "No CUDA GPU detected, training will use CPU",
+      "details": {
+        "torch_version": "2.7.1+cpu",
+        "cuda_compiled": null,
+        "recommendation": "Training will be slower on CPU"
+      }
+    },
+    {
+      "check": "Model Directories",
+      "status": "PASS",
+      "message": "Model directories ready",
+      "details": {
+        "existing": [
+          "models",
+          "models/bert_priority_classifier",
+          "models/training_data",
+          "models/logs"
+        ],
+        "created": [],
+        "total_dirs": 4
+      }
+    },
+    {
+      "check": "Training Data Generator",
+      "status": "FAIL",
+      "message": "Data generation failed: 'BERTTrainingDataGenerator' object has no attribute 'generate_training_data'",
+      "details": {}
+    },
+    {
+      "check": "System Specifications",
+      "status": "WARNING",
+      "message": "psutil not available, cannot check system specs",
+      "details": {
+        "platform": "Windows",
+        "python_version": "3.11.0"
+      }
+    },
+    {
+      "check": "Existing Models",
+      "status": "PASS",
+      "message": "Model directory exists but empty, ready for training",
+      "details": {}
+    }
+  ]
+}

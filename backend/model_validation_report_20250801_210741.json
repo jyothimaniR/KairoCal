@@ -1,0 +1,205 @@
+{
+  "validation_date": "2025-08-01T21:07:41.659641",
+  "model_path": "models/bert_priority_classifier",
+  "total_test_events": 8,
+  "test_results": [
+    {
+      "event": {
+        "title": "URGENT: Server crashed, need immediate fix",
+        "description": "Production server down, customers can't access the application. Need immediate attention from DevOps team.",
+        "start_time": "2025-08-01T21:12:36.723879",
+        "location": "Data Center",
+        "expected_priority": 5,
+        "expected_range": [
+          4,
+          5
+        ],
+        "category": "emergency"
+      },
+      "bert_prediction": {
+        "priority": 5,
+        "confidence": 0.2581539452075958,
+        "correct": true
+      },
+      "fallback_prediction": {
+        "priority": 5,
+        "confidence": 0.8,
+        "correct": true
+      }
+    },
+    {
+      "event": {
+        "title": "Team lunch next Friday",
+        "description": "Casual team lunch at the local restaurant. Optional attendance.",
+        "start_time": "2025-08-08T21:07:36.723879",
+        "location": "Restaurant",
+        "expected_priority": 1,
+        "expected_range": [
+          1,
+          2
+        ],
+        "category": "social"
+      },
+      "bert_prediction": {
+        "priority": 3,
+        "confidence": 0.23519912362098694,
+        "correct": false
+      },
+      "fallback_prediction": {
+        "priority": 1,
+        "confidence": 0.8,
+        "correct": true
+      }
+    },
+    {
+      "event": {
+        "title": "Board meeting with CEO tomorrow",
+        "description": "Quarterly board meeting to discuss company performance and strategic direction. Mandatory attendance for all directors.",
+        "start_time": "2025-08-02T21:07:36.723879",
+        "location": "Conference Room A",
+        "expected_priority": 5,
+        "expected_range": [
+          4,
+          5
+        ],
+        "category": "business_critical"
+      },
+      "bert_prediction": {
+        "priority": 3,
+        "confidence": 0.2336149960756302,
+        "correct": false
+      },
+      "fallback_prediction": {
+        "priority": 5,
+        "confidence": 0.8,
+        "correct": true
+      }
+    },
+    {
+      "event": {
+        "title": "Doctor appointment next week",
+        "description": "Annual health checkup with family physician. Routine appointment.",
+        "start_time": "2025-08-09T21:07:36.723879",
+        "location": "Medical Center",
+        "expected_priority": 3,
+        "expected_range": [
+          2,
+          3
+        ],
+        "category": "personal_health"
+      },
+      "bert_prediction": {
+        "priority": 3,
+        "confidence": 0.24622973799705505,
+        "correct": true
+      },
+      "fallback_prediction": {
+        "priority": 3,
+        "confidence": 0.8,
+        "correct": true
+      }
+    },
+    {
+      "event": {
+        "title": "Coffee break in 10 minutes",
+        "description": "Quick coffee break with colleagues. Very informal.",
+        "start_time": "2025-08-01T21:17:36.723879",
+        "location": "Kitchen",
+        "expected_priority": 1,
+        "expected_range": [
+          1,
+          2
+        ],
+        "category": "break"
+      },
+      "bert_prediction": {
+        "priority": 3,
+        "confidence": 0.2366238832473755,
+        "correct": false
+      },
+      "fallback_prediction": {
+        "priority": 1,
+        "confidence": 0.8,
+        "correct": true
+      }
+    },
+    {
+      "event": {
+        "title": "Client presentation deadline tomorrow",
+        "description": "Final presentation for major client proposal. Multiple stakeholders involved. High visibility project.",
+        "start_time": "2025-08-02T23:07:36.723879",
+        "location": "Client Office",
+        "expected_priority": 4,
+        "expected_range": [
+          4,
+          5
+        ],
+        "category": "client_work"
+      },
+      "bert_prediction": {
+        "priority": 4,
+        "confidence": 0.233322873711586,
+        "correct": true
+      },
+      "fallback_prediction": {
+        "priority": 4,
+        "confidence": 0.8,
+        "correct": true
+      }
+    },
+    {
+      "event": {
+        "title": "Optional training workshop",
+        "description": "Professional development workshop on new technologies. Nice to have but not required.",
+        "start_time": "2025-08-06T21:07:36.723879",
+        "location": "Training Room",
+        "expected_priority": 2,
+        "expected_range": [
+          1,
+          3
+        ],
+        "category": "training"
+      },
+      "bert_prediction": {
+        "priority": 3,
+        "confidence": 0.24012240767478943,
+        "correct": true
+      },
+      "fallback_prediction": {
+        "priority": 2,
+        "confidence": 0.8,
+        "correct": false
+      }
+    },
+    {
+      "event": {
+        "title": "Weekly team standup",
+        "description": "Regular weekly team standup meeting to discuss progress and blockers.",
+        "start_time": "2025-08-03T21:07:36.723879",
+        "location": "Conference Room B",
+        "expected_priority": 3,
+        "expected_range": [
+          2,
+          4
+        ],
+        "category": "regular_meeting"
+      },
+      "bert_prediction": {
+        "priority": 3,
+        "confidence": 0.2492511123418808,
+        "correct": false
+      },
+      "fallback_prediction": {
+        "priority": 3,
+        "confidence": 0.8,
+        "correct": false
+      }
+    }
+  ],
+  "summary": {
+    "bert_available": true,
+    "fallback_available": true,
+    "bert_accuracy": 50.0,
+    "fallback_accuracy": 75.0
+  }
+}

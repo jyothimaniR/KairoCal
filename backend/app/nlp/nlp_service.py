@@ -4,13 +4,17 @@ Main NLP Service - Orchestrates all NLP components for intelligent event creatio
 """
 
 import time
-from typing import Optional, Dict, Any
+import logging
+from typing import Optional, Dict, Any, Tuple
 from datetime import datetime, timezone
 
 from .entities import ExtractedEvent, NLPResponse, IntentType, TemporalContext, ProcessingStats
 from .text_processor import TextProcessor
 from .pattern_matcher import PatternMatcher
 from .temporal_resolver import TemporalResolver
+from .model_loader import load_bert_model, ModelLoadError
+
+logger = logging.getLogger(__name__)
 
 
 class NLPService:
@@ -23,6 +27,11 @@ class NLPService:
         self.text_processor = TextProcessor()
         self.pattern_matcher = PatternMatcher()
         self.temporal_resolver = TemporalResolver(current_time, user_timezone)
+        
+        # Initialize BERT classifier for priority classification
+        self._bert_classifier = None
+        self._bert_available = False
+        self._initialize_bert_classifier()
         
         # Confidence thresholds
         self.auto_create_threshold = 0.8
@@ -42,6 +51,85 @@ class NLPService:
             "interview": 60,
             "default": 60
         }
+    
+    def _initialize_bert_classifier(self):
+        """Initialize BERT classifier with error handling"""
+        try:
+            self._bert_classifier = load_bert_model()
+            self._bert_available = True
+            logger.info("✅ BERT classifier initialized successfully")
+        except Exception as e:
+            logger.warning(f"⚠️ BERT classifier unavailable: {str(e)}")
+            logger.info("🔄 Will use rule-based priority classification as fallback")
+            self._bert_available = False
+    
+    def classify_priority(self, event_data: Dict[str, Any], user_context: Optional[Dict[str, Any]] = None) -> Tuple[int, float, str]:
+        """
+        Classify event priority using BERT or fallback to rule-based
+        
+        Args:
+            event_data: Event data dictionary
+            user_context: Optional user behavioral context
+            
+        Returns:
+            Tuple of (priority_level, confidence, classification_method)
+        """
+        try:
+            if self._bert_available and self._bert_classifier:
+                # Use BERT classifier
+                priority, confidence = self._bert_classifier.predict(event_data, user_context)
+                return priority, confidence, 'bert'
+            else:
+                # Fallback to rule-based classification
+                priority, confidence = self._rule_based_priority_classification(event_data)
+                return priority, confidence, 'rule_based'
+                
+        except Exception as e:
+            logger.error(f"Priority classification failed: {str(e)}")
+            # Emergency fallback
+            return 3, 0.3, 'fallback'  # Default to medium priority
+    
+    def _rule_based_priority_classification(self, event_data: Dict[str, Any]) -> Tuple[int, float]:
+        """
+        Fallback rule-based priority classification
+        
+        Args:
+            event_data: Event data dictionary
+            
+        Returns:
+            Tuple of (priority_level, confidence)
+        """
+        title = event_data.get('title', '').lower()
+        description = event_data.get('description', '').lower()
+        text = f"{title} {description}"
+        
+        # Priority keywords with weights
+        priority_keywords = {
+            5: ['urgent', 'emergency', 'critical', 'asap', 'crisis', 'ceo', 'board', 'fire'],
+            4: ['important', 'deadline', 'client', 'presentation', 'interview', 'review'],
+            3: ['meeting', 'call', 'appointment', 'sync', 'discussion'],
+            2: ['training', 'workshop', 'optional', 'casual', 'lunch'],
+            1: ['coffee', 'break', 'personal', 'social', 'flexible']
+        }
+        
+        # Calculate priority scores
+        scores = {}
+        for priority, keywords in priority_keywords.items():
+            score = sum(1 for keyword in keywords if keyword in text)
+            if score > 0:
+                scores[priority] = score
+        
+        if not scores:
+            return 3, 0.5  # Default medium priority
+        
+        # Get highest scoring priority
+        priority = max(scores.keys(), key=lambda k: scores[k])
+        max_score = scores[priority]
+        
+        # Calculate confidence based on keyword matches
+        confidence = min(0.3 + (max_score * 0.2), 0.8)
+        
+        return priority, confidence
     
     def process_text(self, text: str, context: Optional[TemporalContext] = None) -> NLPResponse:
         """

@@ -1,0 +1,93 @@
+{
+  "demo_summary": {
+    "timestamp": "2025-08-02T00:06:15.531343",
+    "total_commands": 5,
+    "successful_commands": 0,
+    "success_rate": 0.0,
+    "priority_level_stats": {
+      "Critical Priority (5)": {
+        "total": 1,
+        "successful": 0
+      },
+      "High Priority (4)": {
+        "total": 1,
+        "successful": 0
+      },
+      "Medium Priority (3)": {
+        "total": 1,
+        "successful": 0
+      },
+      "Low Priority (2)": {
+        "total": 1,
+        "successful": 0
+      },
+      "Very Low Priority (1)": {
+        "total": 1,
+        "successful": 0
+      }
+    },
+    "processing_step_stats": {
+      "transcription": {
+        "success": 0,
+        "total": 0
+      },
+      "analysis": {
+        "success": 0,
+        "total": 0
+      },
+      "event_creation": {
+        "success": 0,
+        "total": 0
+      }
+    }
+  },
+  "bert_analysis": {
+    "commands_classified": 0,
+    "average_priority": 0,
+    "average_confidence": 0,
+    "priority_distribution": {
+      "1": 0,
+      "2": 0,
+      "3": 0,
+      "4": 0,
+      "5": 0
+    }
+  },
+  "detailed_results": [
+    {
+      "voice_text": "URGENT: Emergency board meeting now in the main conference room",
+      "category": "Critical Priority (5)",
+      "timestamp": "2025-08-02T00:05:50.081926",
+      "processing_steps": {},
+      "error": "Network error: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/voice/transcribe (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x000002001BFE5810>: Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it'))"
+    },
+    {
+      "voice_text": "Important client presentation tomorrow at 2pm in conference room A",
+      "category": "High Priority (4)",
+      "timestamp": "2025-08-02T00:05:55.156093",
+      "processing_steps": {},
+      "error": "Network error: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/voice/transcribe (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x000002001BFCDFD0>: Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it'))"
+    },
+    {
+      "voice_text": "Weekly team standup meeting next Monday at 9am",
+      "category": "Medium Priority (3)",
+      "timestamp": "2025-08-02T00:06:00.250905",
+      "processing_steps": {},
+      "error": "Network error: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/voice/transcribe (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x000002001BFE7B90>: Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it'))"
+    },
+    {
+      "voice_text": "Optional workshop on productivity techniques next week",
+      "category": "Low Priority (2)",
+      "timestamp": "2025-08-02T00:06:05.316429",
+      "processing_steps": {},
+      "error": "Network error: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/voice/transcribe (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x000002001BFEE090>: Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it'))"
+    },
+    {
+      "voice_text": "Informal coffee break with colleagues in 30 minutes",
+      "category": "Very Low Priority (1)",
+      "timestamp": "2025-08-02T00:06:10.435126",
+      "processing_steps": {},
+      "error": "Network error: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /api/v1/voice/transcribe (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x000002001BFEF410>: Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it'))"
+    }
+  ]
+}

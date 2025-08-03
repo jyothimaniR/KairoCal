@@ -1,0 +1,1401 @@
+openapi: 3.0.3
+info:
+  title: KairoCal BERT Priority Classification API
+  description: |
+    Smart Calendar API with BERT-powered priority classification, conflict detection, and intelligent scheduling.
+    
+    ## Features
+    - **BERT Priority Classification**: AI-powered event priority assessment with confidence scoring
+    - **Smart Conflict Detection**: Priority-aware conflict resolution and alternative suggestions  
+    - **Analytics & Insights**: Comprehensive behavior analysis and priority pattern tracking
+    - **User Behavior Analytics**: Intelligent scheduling recommendations based on user patterns
+    - **Enhanced Events Management**: Priority filtering, classification methods, and reclassification
+    
+    ## Priority Levels
+    - **1 (Critical)**: Urgent, business-critical events requiring immediate attention
+    - **2 (High)**: Important events with significant impact on goals/deadlines
+    - **3 (Medium)**: Standard priority events (default for most activities)
+    - **4 (Low)**: Optional events that can be easily rescheduled
+    - **5 (Very Low)**: Flexible tasks with no specific deadlines
+    
+    ## Classification Methods
+    - **bert**: AI-powered classification using DistilBERT model
+    - **rule_based**: Heuristic-based classification using keywords and patterns
+    - **manual**: User-specified priority levels
+    - **fallback**: Default classification when other methods fail
+    
+  version: 2.0.0
+  contact:
+    name: KairoCal API Support
+    email: api-support@kairocal.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://api.kairocal.com/v1
+    description: Production server
+  - url: https://staging-api.kairocal.com/v1  
+    description: Staging server
+  - url: http://localhost:8000/api/v1
+    description: Development server
+
+paths:
+  # Health Check
+  /health:
+    get:
+      tags:
+        - System
+      summary: Health check endpoint
+      description: Check API server health and status
+      responses:
+        '200':
+          description: Server is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "healthy"
+                  timestamp:
+                    type: string
+                    format: date-time
+                  version:
+                    type: string
+                    example: "2.0.0"
+
+  # Events Management with BERT Priority Integration
+  /events:
+    get:
+      tags:
+        - Events
+      summary: List user events with priority filtering
+      description: |
+        Retrieve user's events with enhanced priority filtering, sorting, and statistics.
+        Supports filtering by priority levels, classification methods, and date ranges.
+      parameters:
+        - name: cognito_sub
+          in: query
+          required: true
+          schema:
+            type: string
+          description: User's Cognito sub ID
+        - name: start_date
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Filter events starting from this date
+        - name: end_date
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Filter events ending before this date
+        - name: min_priority
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 5
+          description: Minimum priority level (1=Critical, 5=Very Low)
+        - name: max_priority
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 5
+          description: Maximum priority level (1=Critical, 5=Very Low)
+        - name: priority_levels
+          in: query
+          schema:
+            type: array
+            items:
+              type: integer
+              minimum: 1
+              maximum: 5
+          description: Specific priority levels to include
+        - name: classification_method
+          in: query
+          schema:
+            type: string
+            enum: [bert, rule_based, manual, fallback]
+          description: Filter by classification method
+        - name: include_priority_stats
+          in: query
+          schema:
+            type: boolean
+            default: false
+          description: Include priority distribution statistics
+        - name: sort_by
+          in: query
+          schema:
+            type: string
+            enum: [start_time, priority, confidence]
+            default: start_time
+          description: Sort events by field
+        - name: sort_order
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: asc
+          description: Sort order
+        - name: skip
+          in: query
+          schema:
+            type: integer
+            default: 0
+          description: Number of events to skip (pagination)
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 100
+          description: Maximum number of events to return
+      responses:
+        '200':
+          description: Events retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EventResponse'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    post:
+      tags:
+        - Events
+      summary: Create new event with automatic priority classification
+      description: |
+        Create a new event with optional BERT-powered priority classification.
+        The system can automatically classify event priority based on title, description, and context.
+      parameters:
+        - name: cognito_sub
+          in: query
+          required: true
+          schema:
+            type: string
+          description: User's Cognito sub ID
+        - name: auto_classify_priority
+          in: query
+          schema:
+            type: boolean
+            default: true
+          description: Automatically classify event priority using BERT
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventCreate'
+      responses:
+        '201':
+          description: Event created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventResponse'
+        '400':
+          description: Invalid event data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /events/{event_id}:
+    get:
+      tags:
+        - Events
+      summary: Get specific event
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: cognito_sub
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Event retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventWithReminders'
+        '404':
+          description: Event not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    put:
+      tags:
+        - Events
+      summary: Update event
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: cognito_sub
+          in: query
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventUpdate'
+      responses:
+        '200':
+          description: Event updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventResponse'
+
+    delete:
+      tags:
+        - Events
+      summary: Delete event
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: cognito_sub
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Event deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+
+  # Priority-Focused Event Endpoints
+  /events/priority/high-priority:
+    get:
+      tags:
+        - Events
+        - Priority
+      summary: Get high-priority events
+      description: |
+        Retrieve high-priority events (Priority 1-2) for immediate attention.
+        Useful for dashboards, mobile quick views, and urgent task notifications.
+      parameters:
+        - name: cognito_sub
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: max_priority
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 5
+            default: 2
+          description: Maximum priority level to include
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+          description: Maximum number of events to return
+        - name: include_upcoming_only
+          in: query
+          schema:
+            type: boolean
+            default: true
+          description: Include only upcoming events
+      responses:
+        '200':
+          description: High-priority events retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EventResponse'
+
+  /events/priority/low-confidence:
+    get:
+      tags:
+        - Events
+        - Priority
+      summary: Get low-confidence classifications
+      description: |
+        Retrieve events with low BERT classification confidence for manual review.
+        Useful for quality assurance and training data improvement.
+      parameters:
+        - name: cognito_sub
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: max_confidence
+          in: query
+          schema:
+            type: number
+            format: float
+            minimum: 0.0
+            maximum: 1.0
+            default: 0.6
+          description: Maximum confidence threshold
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+          description: Maximum number of events to return
+      responses:
+        '200':
+          description: Low-confidence events retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EventResponse'
+
+  /events/{event_id}/reclassify:
+    post:
+      tags:
+        - Events
+        - Priority
+      summary: Reclassify event priority
+      description: |
+        Reclassify an event's priority using the latest BERT model.
+        Useful for updating classifications after model improvements.
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: cognito_sub
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: force_bert
+          in: query
+          schema:
+            type: boolean
+            default: false
+          description: Force BERT reclassification even if already classified
+      responses:
+        '200':
+          description: Event reclassified successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventResponse'
+        '500':
+          description: Reclassification failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /events/priority/conflicts:
+    get:
+      tags:
+        - Events
+        - Priority
+        - Conflicts
+      summary: Detect priority conflicts
+      description: |
+        Detect scheduling conflicts between events with different priorities.
+        Useful for scheduling optimization and priority-based conflict resolution.
+      parameters:
+        - name: cognito_sub
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: start_date
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Start date for conflict detection
+        - name: end_date
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: End date for conflict detection
+        - name: min_priority_diff
+          in: query
+          schema:
+            type: integer
+            default: 2
+          description: Minimum priority difference to consider as conflict
+      responses:
+        '200':
+          description: Conflicts detected and analyzed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConflictAnalysis'
+
+  # NLP and BERT Classification Endpoints
+  /nlp/classify-priority:
+    post:
+      tags:
+        - NLP
+        - Priority
+      summary: Classify event priority using BERT
+      description: |
+        Classify event priority using BERT model with confidence scoring.
+        Supports both BERT and fallback classification methods.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PriorityClassificationRequest'
+      responses:
+        '200':
+          description: Priority classified successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PriorityClassificationResponse'
+        '400':
+          description: Invalid classification request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /nlp/model-status:
+    get:
+      tags:
+        - NLP
+      summary: Get BERT model status
+      description: Check BERT model loading status and capabilities
+      responses:
+        '200':
+          description: Model status retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelStatus'
+
+  # Analytics Endpoints
+  /analytics/priority/trends:
+    get:
+      tags:
+        - Analytics
+        - Priority
+      summary: Get priority distribution trends
+      description: |
+        Analyze priority distribution trends over time with configurable granularity.
+        Provides insights into user scheduling patterns and priority evolution.
+      parameters:
+        - name: cognito_sub
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: days_back
+          in: query
+          schema:
+            type: integer
+            minimum: 7
+            maximum: 365
+            default: 30
+          description: Number of days to analyze
+        - name: granularity
+          in: query
+          schema:
+            type: string
+            enum: [daily, weekly, monthly]
+            default: weekly
+          description: Analysis granularity
+      responses:
+        '200':
+          description: Priority trends analyzed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PriorityTrends'
+
+  /analytics/bert/performance:
+    get:
+      tags:
+        - Analytics
+        - BERT
+      summary: Get BERT performance metrics
+      description: |
+        Analyze BERT classification performance and accuracy metrics.
+        Provides insights into model confidence patterns and adoption rates.
+      parameters:
+        - name: cognito_sub
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: days_back
+          in: query
+          schema:
+            type: integer
+            minimum: 7
+            maximum: 365
+            default: 30
+          description: Number of days to analyze
+        - name: include_confidence_distribution
+          in: query
+          schema:
+            type: boolean
+            default: true
+          description: Include confidence score distribution
+      responses:
+        '200':
+          description: BERT performance metrics retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BERTPerformanceMetrics'
+
+  /analytics/conflicts/resolution-effectiveness:
+    get:
+      tags:
+        - Analytics
+        - Conflicts
+      summary: Get conflict resolution effectiveness
+      description: |
+        Analyze effectiveness of priority-based conflict resolution.
+        Provides metrics on conflict patterns and resolution success rates.
+      parameters:
+        - name: cognito_sub
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: days_back
+          in: query
+          schema:
+            type: integer
+            minimum: 7
+            maximum: 365
+            default: 30
+          description: Number of days to analyze
+      responses:
+        '200':
+          description: Conflict resolution effectiveness analyzed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConflictResolutionMetrics'
+
+  # User Behavior Analytics (Existing)
+  /analytics/user/{cognito_sub}/insights:
+    get:
+      tags:
+        - Analytics
+        - User Behavior
+      summary: Get user behavior insights
+      description: |
+        Get comprehensive behavior insights including scheduling patterns,
+        preferences, and productivity recommendations.
+      parameters:
+        - name: cognito_sub
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: User insights retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserInsights'
+
+  /analytics/user/{cognito_sub}/time-suggestions:
+    get:
+      tags:
+        - Analytics
+        - User Behavior
+      summary: Get smart time suggestions
+      description: |
+        Get AI-powered time slot suggestions for scheduling new events
+        based on user behavior patterns and preferences.
+      parameters:
+        - name: cognito_sub
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: duration
+          in: query
+          required: true
+          schema:
+            type: integer
+            minimum: 15
+            maximum: 480
+          description: Event duration in minutes
+        - name: preferred_date
+          in: query
+          schema:
+            type: string
+            format: date
+          description: Preferred date in YYYY-MM-DD format
+      responses:
+        '200':
+          description: Time suggestions generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TimeSuggestions'
+
+  # User Management
+  /users:
+    post:
+      tags:
+        - Users
+      summary: Create user profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCreate'
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+
+  /users/{cognito_sub}:
+    get:
+      tags:
+        - Users
+      summary: Get user profile
+      parameters:
+        - name: cognito_sub
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: User profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+
+components:
+  schemas:
+    # Event Schemas
+    EventCreate:
+      type: object
+      required:
+        - title
+        - start_time
+        - end_time
+      properties:
+        title:
+          type: string
+          maxLength: 200
+          description: Event title
+          example: "Quarterly Board Meeting"
+        description:
+          type: string
+          maxLength: 1000
+          description: Event description
+          example: "Critical quarterly review with all department heads"
+        start_time:
+          type: string
+          format: date-time
+          description: Event start time
+          example: "2024-01-15T10:00:00Z"
+        end_time:
+          type: string
+          format: date-time
+          description: Event end time
+          example: "2024-01-15T12:00:00Z"
+        location:
+          type: string
+          maxLength: 200
+          description: Event location
+          example: "Conference Room A"
+        priority_level:
+          type: integer
+          minimum: 1
+          maximum: 5
+          description: Manual priority level (1=Critical, 5=Very Low)
+          example: 2
+        priority_confidence:
+          type: number
+          format: float
+          minimum: 0.0
+          maximum: 1.0
+          description: Priority classification confidence
+          example: 0.85
+        classification_method:
+          type: string
+          enum: [bert, rule_based, manual, fallback]
+          description: Method used for priority classification
+          example: "bert"
+
+    EventUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+          maxLength: 200
+          example: "Updated Board Meeting"
+        description:
+          type: string
+          maxLength: 1000
+          example: "Updated quarterly review with revised agenda"
+        start_time:
+          type: string
+          format: date-time
+          example: "2024-01-15T14:00:00Z"
+        end_time:
+          type: string
+          format: date-time
+          example: "2024-01-15T16:00:00Z"
+        location:
+          type: string
+          maxLength: 200
+          example: "Conference Room B"
+        priority_level:
+          type: integer
+          minimum: 1
+          maximum: 5
+          example: 1
+
+    EventResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        title:
+          type: string
+          example: "Quarterly Board Meeting"
+        description:
+          type: string
+          example: "Critical quarterly review with all department heads"
+        start_time:
+          type: string
+          format: date-time
+          example: "2024-01-15T10:00:00Z"
+        end_time:
+          type: string
+          format: date-time
+          example: "2024-01-15T12:00:00Z"
+        location:
+          type: string
+          example: "Conference Room A"
+        priority_level:
+          type: integer
+          minimum: 1
+          maximum: 5
+          description: Priority level (1=Critical, 5=Very Low)
+          example: 2
+        priority_confidence:
+          type: number
+          format: float
+          minimum: 0.0
+          maximum: 1.0
+          description: Classification confidence score
+          example: 0.85
+        classification_method:
+          type: string
+          enum: [bert, rule_based, manual, fallback]
+          description: Method used for priority classification
+          example: "bert"
+        user_id:
+          type: integer
+          example: 1
+        created_at:
+          type: string
+          format: date-time
+          example: "2024-01-10T09:00:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          example: "2024-01-10T09:00:00Z"
+
+    EventWithReminders:
+      allOf:
+        - $ref: '#/components/schemas/EventResponse'
+        - type: object
+          properties:
+            reminders:
+              type: array
+              items:
+                $ref: '#/components/schemas/ReminderResponse'
+
+    # Priority Classification Schemas
+    PriorityClassificationRequest:
+      type: object
+      required:
+        - title
+      properties:
+        title:
+          type: string
+          maxLength: 200
+          description: Event title for classification
+          example: "Emergency System Outage Response"
+        description:
+          type: string
+          maxLength: 1000
+          description: Event description for classification
+          example: "Critical production system failure affecting all customers"
+        location:
+          type: string
+          maxLength: 200
+          description: Event location for classification
+          example: "Emergency Response Center"
+        user_context:
+          type: object
+          description: Optional user context for personalized classification
+          additionalProperties: true
+
+    PriorityClassificationResponse:
+      type: object
+      properties:
+        priority:
+          type: integer
+          minimum: 1
+          maximum: 5
+          description: Classified priority level
+          example: 1
+        confidence:
+          type: number
+          format: float
+          minimum: 0.0
+          maximum: 1.0
+          description: Classification confidence score
+          example: 0.92
+        method:
+          type: string
+          enum: [bert, rule_based, fallback]
+          description: Classification method used
+          example: "bert"
+        reasoning:
+          type: string
+          description: Human-readable explanation of classification
+          example: "Emergency and system outage keywords indicate critical priority"
+        processing_time:
+          type: number
+          format: float
+          description: Processing time in seconds
+          example: 0.045
+
+    # Analytics Schemas
+    PriorityTrends:
+      type: object
+      properties:
+        user_id:
+          type: integer
+          example: 1
+        period:
+          type: object
+          properties:
+            start_date:
+              type: string
+              format: date-time
+            end_date:
+              type: string
+              format: date-time
+            granularity:
+              type: string
+              enum: [daily, weekly, monthly]
+        trends:
+          type: array
+          items:
+            type: object
+            properties:
+              period:
+                type: string
+                example: "2024-01-01"
+              total_events:
+                type: integer
+                example: 25
+              priority_distribution:
+                type: object
+                additionalProperties:
+                  type: object
+                  properties:
+                    count:
+                      type: integer
+                    percentage:
+                      type: number
+                      format: float
+              high_priority_percentage:
+                type: number
+                format: float
+                example: 24.0
+              critical_events:
+                type: integer
+                example: 2
+        insights:
+          type: object
+          properties:
+            total_events_analyzed:
+              type: integer
+            average_events_per_period:
+              type: number
+              format: float
+            high_priority_rate:
+              type: number
+              format: float
+            critical_event_rate:
+              type: number
+              format: float
+            trend_direction:
+              type: string
+              enum: [increasing_high_priority, decreasing_high_priority, stable, insufficient_data]
+            busiest_period:
+              type: string
+
+    BERTPerformanceMetrics:
+      type: object
+      properties:
+        user_id:
+          type: integer
+        period:
+          type: object
+          properties:
+            start_date:
+              type: string
+              format: date-time
+            end_date:
+              type: string
+              format: date-time
+        classification_overview:
+          type: object
+          properties:
+            total_events:
+              type: integer
+            bert_classified:
+              type: integer
+            bert_adoption_rate:
+              type: number
+              format: float
+            method_distribution:
+              type: object
+              additionalProperties:
+                type: object
+                properties:
+                  count:
+                    type: integer
+                  percentage:
+                    type: number
+                    format: float
+        bert_performance:
+          type: object
+          properties:
+            confidence_statistics:
+              type: object
+              properties:
+                average:
+                  type: number
+                  format: float
+                median:
+                  type: number
+                  format: float
+                min:
+                  type: number
+                  format: float
+                max:
+                  type: number
+                  format: float
+                std_dev:
+                  type: number
+                  format: float
+            confidence_distribution:
+              type: object
+              additionalProperties:
+                type: object
+                properties:
+                  count:
+                    type: integer
+                  percentage:
+                    type: number
+                    format: float
+            high_confidence_rate:
+              type: number
+              format: float
+            low_confidence_rate:
+              type: number
+              format: float
+            priority_distribution:
+              type: object
+              additionalProperties:
+                type: integer
+        recommendations:
+          type: array
+          items:
+            type: string
+
+    ConflictAnalysis:
+      type: object
+      properties:
+        user_id:
+          type: integer
+        period:
+          type: object
+          properties:
+            start_date:
+              type: string
+              format: date-time
+            end_date:
+              type: string
+              format: date-time
+        conflicts_detected:
+          type: integer
+        conflicts:
+          type: array
+          items:
+            type: object
+            properties:
+              event1:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  title:
+                    type: string
+                  priority:
+                    type: integer
+                  start_time:
+                    type: string
+                    format: date-time
+                  end_time:
+                    type: string
+                    format: date-time
+              event2:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  title:
+                    type: string
+                  priority:
+                    type: integer
+                  start_time:
+                    type: string
+                    format: date-time
+                  end_time:
+                    type: string
+                    format: date-time
+              priority_difference:
+                type: integer
+              overlap_duration_minutes:
+                type: integer
+              recommendation:
+                type: string
+        summary:
+          type: object
+          properties:
+            total_events_analyzed:
+              type: integer
+            conflicts_requiring_attention:
+              type: integer
+            average_priority_difference:
+              type: number
+              format: float
+
+    # User Schemas
+    UserCreate:
+      type: object
+      required:
+        - cognito_sub
+        - email
+        - full_name
+      properties:
+        cognito_sub:
+          type: string
+          description: Cognito sub identifier
+          example: "auth0|507f1f77bcf86cd799439011"
+        email:
+          type: string
+          format: email
+          description: User email address
+          example: "user@example.com"
+        full_name:
+          type: string
+          maxLength: 100
+          description: User's full name
+          example: "John Doe"
+        time_zone:
+          type: string
+          description: User's timezone
+          example: "America/New_York"
+        preferences:
+          type: object
+          description: User preferences
+          additionalProperties: true
+
+    UserResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        cognito_sub:
+          type: string
+          example: "auth0|507f1f77bcf86cd799439011"
+        email:
+          type: string
+          format: email
+          example: "user@example.com"
+        full_name:
+          type: string
+          example: "John Doe"
+        time_zone:
+          type: string
+          example: "America/New_York"
+        preferences:
+          type: object
+          additionalProperties: true
+        created_at:
+          type: string
+          format: date-time
+          example: "2024-01-01T00:00:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          example: "2024-01-01T00:00:00Z"
+
+    # Supporting Schemas
+    ReminderResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        event_id:
+          type: string
+          format: uuid
+        reminder_time:
+          type: string
+          format: date-time
+        type:
+          type: string
+          enum: [email, push, sms]
+        status:
+          type: string
+          enum: [pending, sent, failed]
+
+    ModelStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [bert_loaded, fallback, error]
+          example: "bert_loaded"
+        model_version:
+          type: string
+          example: "1.0.0"
+        model_path:
+          type: string
+          example: "models/priority_classifier"
+        capabilities:
+          type: array
+          items:
+            type: string
+          example: ["priority_classification", "confidence_scoring"]
+        performance:
+          type: object
+          properties:
+            average_inference_time:
+              type: number
+              format: float
+              description: Average inference time in seconds
+              example: 0.025
+            last_updated:
+              type: string
+              format: date-time
+
+    Error:
+      type: object
+      properties:
+        detail:
+          type: string
+          description: Error message
+          example: "User not found"
+        status_code:
+          type: integer
+          description: HTTP status code
+          example: 404
+        timestamp:
+          type: string
+          format: date-time
+          example: "2024-01-15T10:00:00Z"
+
+    # Additional Schemas for User Behavior Analytics
+    UserInsights:
+      type: object
+      properties:
+        status:
+          type: string
+          example: "success"
+        data:
+          type: object
+          additionalProperties: true
+        generated_at:
+          type: string
+          format: date-time
+
+    TimeSuggestions:
+      type: object
+      properties:
+        status:
+          type: string
+          example: "success"
+        data:
+          type: object
+          properties:
+            suggestions:
+              type: array
+              items:
+                type: object
+                properties:
+                  start_time:
+                    type: string
+                    format: date-time
+                  end_time:
+                    type: string
+                    format: date-time
+                  confidence_score:
+                    type: number
+                    format: float
+                  reasoning:
+                    type: string
+        generated_at:
+          type: string
+          format: date-time
+
+    ConflictResolutionMetrics:
+      type: object
+      properties:
+        user_id:
+          type: integer
+        period:
+          type: object
+          properties:
+            start_date:
+              type: string
+              format: date-time
+            end_date:
+              type: string
+              format: date-time
+        effectiveness_metrics:
+          type: object
+          properties:
+            conflict_analysis:
+              type: object
+              properties:
+                total_conflicts_detected:
+                  type: integer
+                priority_based_conflicts:
+                  type: integer
+                clear_priority_resolutions:
+                  type: integer
+                resolution_effectiveness_rate:
+                  type: number
+                  format: float
+            conflict_patterns:
+              type: object
+              properties:
+                average_priority_difference:
+                  type: number
+                  format: float
+                high_confidence_resolutions:
+                  type: integer
+                average_overlap_minutes:
+                  type: number
+                  format: float
+            recommendations:
+              type: array
+              items:
+                type: string
+        conflict_details:
+          type: array
+          items:
+            type: object
+            properties:
+              event1_priority:
+                type: integer
+              event2_priority:
+                type: integer
+              priority_difference:
+                type: integer
+              resolution_confidence:
+                type: string
+                enum: [high, medium, low]
+              overlap_duration:
+                type: integer
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained from Cognito authentication
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: System
+    description: System health and status endpoints
+  - name: Events
+    description: Event management with BERT priority classification
+  - name: Priority
+    description: Priority-focused operations and analysis
+  - name: NLP
+    description: Natural Language Processing and BERT classification
+  - name: Analytics
+    description: Analytics and insights endpoints
+  - name: BERT
+    description: BERT model performance and metrics
+  - name: Conflicts
+    description: Conflict detection and resolution
+  - name: User Behavior
+    description: User behavior analysis and recommendations
+  - name: Users
+    description: User management operations
