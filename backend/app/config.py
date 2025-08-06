@@ -5,7 +5,7 @@ from functools import lru_cache
 class Settings(BaseSettings):
     # App
     app_name: str = "KairoCal"
-    debug: bool = True
+    app_debug: bool = True
     
     # Database - Will use Docker service name when in container
     database_url: str = "postgresql://kairocal_user:Test123@postgres:5432/kairocal"

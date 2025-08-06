@@ -6,6 +6,7 @@
     "@fullcalendar/list": "^6.1.18",
     "@fullcalendar/react": "^6.1.18",
     "@fullcalendar/timegrid": "^6.1.18",
-    "aws-amplify": "^6.15.3"
+    "aws-amplify": "^6.15.3",
+    "playwright": "^1.54.2"
   }
 }

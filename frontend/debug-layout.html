@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Layout Debug Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .debug-box {
+            outline: 2px solid red;
+            outline-offset: -1px;
+        }
+        .debug-green {
+            outline: 2px solid green;
+        }
+        .debug-blue {
+            outline: 2px solid blue;
+        }
+    </style>
+</head>
+<body>
+    <div class="h-screen bg-gray-50 flex overflow-hidden debug-box">
+        <!-- Test 1: Our Current Layout -->
+        <div class="w-52 bg-white shadow-sm border-r border-gray-200 flex flex-col flex-shrink-0 debug-green">
+            <div class="p-4 border-b border-gray-200">
+                <div class="text-lg font-semibold">Sidebar</div>
+            </div>
+            <div class="flex-1 p-3">Navigation items...</div>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="flex-1 flex flex-col min-w-0 overflow-hidden debug-blue">
+            <!-- Header -->
+            <header class="bg-white border-b border-gray-200 px-4 py-3 flex-shrink-0">
+                <div class="text-lg font-semibold">Header</div>
+            </header>
+
+            <!-- Content Area -->
+            <main class="flex-1 overflow-auto">
+                <div class="w-full h-full bg-gray-50 debug-box">
+                    <div class="w-full h-full">
+                        <div class="grid grid-cols-12 gap-6 p-6 w-full min-h-screen debug-green">
+                            <!-- Left Column -->
+                            <div class="col-span-12 xl:col-span-9 2xl:col-span-10 space-y-6 debug-blue">
+                                <div class="bg-white p-6 rounded-lg">
+                                    <h2>Main Content Area</h2>
+                                    <p>This should take maximum width available</p>
+                                    <div class="bg-gray-100 p-4 mt-4">Sample content block</div>
+                                    <div class="bg-gray-100 p-4 mt-4">Sample content block</div>
+                                    <div class="bg-gray-100 p-4 mt-4">Sample content block</div>
+                                </div>
+                            </div>
+                            
+                            <!-- Right Column -->
+                            <div class="col-span-12 xl:col-span-3 2xl:col-span-2 space-y-6 debug-box">
+                                <div class="bg-white p-6 rounded-lg">
+                                    <h3>Sidebar Widget</h3>
+                                    <div class="bg-gray-100 p-3 mt-3">Widget 1</div>
+                                    <div class="bg-gray-100 p-3 mt-3">Widget 2</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Test 2: Alternative Layout -->
+    <div style="margin-top: 50px; height: 100vh;" class="bg-gray-50 flex overflow-hidden debug-box">
+        <div class="w-52 bg-white border-r debug-green flex-shrink-0">
+            <div class="p-4">Alternative Sidebar</div>
+        </div>
+        <div class="flex-1 min-w-0 debug-blue">
+            <div class="h-16 bg-white border-b px-4 flex items-center">Alternative Header</div>
+            <div class="h-full p-0 m-0" style="height: calc(100vh - 4rem);">
+                <div class="h-full grid grid-cols-12 gap-4 p-4">
+                    <div class="col-span-9 bg-white p-4 debug-green">
+                        <h2>Alternative Main Content</h2>
+                        <p>Testing full width utilization</p>
+                    </div>
+                    <div class="col-span-3 bg-white p-4 debug-box">
+                        <h3>Alt Sidebar</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

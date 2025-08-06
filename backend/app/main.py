@@ -46,13 +46,20 @@ app = FastAPI(
     title="KairoCal API",
     description="AI-Powered Smart Calendar System with BERT Priority Classification",
     version="1.0.0",
-    debug=settings.debug
+    debug=settings.app_debug
 )
 
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=[
+        "http://localhost:5173",
+        "http://localhost:4173", 
+        "http://127.0.0.1:4173",
+        "http://127.0.0.1:5173",
+        "http://localhost:3000",
+        "http://127.0.0.1:3000"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

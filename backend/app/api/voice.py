@@ -411,57 +411,91 @@ async def voice_health_check():
         )
 
 # Additional utility endpoints
+class VoiceAnalysisRequest(BaseModel):
+    """Voice analysis request model"""
+    voice_text: str = Field(..., min_length=1, max_length=5000, description="Voice input to analyze")
+    user_id: Optional[int] = Field(None, description="User ID for personalized analysis")
+    include_bert: bool = Field(True, description="Include BERT classification in analysis")
+    detailed_analysis: bool = Field(False, description="Include detailed analysis information")
+    
+    @validator('voice_text')
+    def validate_voice_text(cls, v):
+        if not v or not v.strip():
+            raise ValueError("Voice text cannot be empty")
+        return v.strip()
+
 @voice_router.post("/analyze-voice")
 async def analyze_voice_input(
-    voice_text: str,
-    user_id: Optional[int] = None
+    request: VoiceAnalysisRequest
 ):
     """
     Analyze voice input without creating an event
     Useful for testing and validation
     """
     try:
-        logger.info(f"🔍 Analyzing voice input: '{voice_text[:50]}...'")
+        logger.info(f"🔍 Analyzing voice input: '{request.voice_text[:50]}...'")
         
         # Process voice text
         processor = VoiceProcessor()
-        cleaning_result = processor.clean_voice_text(voice_text)
+        cleaning_result = processor.clean_voice_text(request.voice_text)
         
         # NLP analysis
         nlp_service = NLPService()
         nlp_result = await nlp_service.process_voice_input(cleaning_result['cleaned_text'])
         
-        # BERT analysis
-        from ..nlp.model_loader import get_global_bert_model
-        bert_model = get_global_bert_model()
+        # BERT analysis if requested
+        bert_analysis = {}
+        if request.include_bert:
+            from ..nlp.model_loader import get_global_bert_model
+            bert_model = get_global_bert_model()
+            
+            if bert_model and bert_model.is_trained:
+                event_for_bert = {
+                    'title': nlp_result.get('title', 'Voice Event'),
+                    'description': nlp_result.get('description', cleaning_result['cleaned_text']),
+                    'start_time': nlp_result.get('start_time', datetime.now().isoformat()),
+                    'location': nlp_result.get('location', '')
+                }
+                bert_priority, bert_confidence = bert_model.predict(event_for_bert)
+                bert_analysis = {
+                    'priority': bert_priority,
+                    'confidence': bert_confidence,
+                    'reasoning': f"BERT classified this as priority {bert_priority} with {bert_confidence:.1%} confidence",
+                    'available': True
+                }
+            else:
+                bert_priority = nlp_result.get('priority', 3)
+                bert_confidence = 0.6
+                bert_analysis = {
+                    'priority': bert_priority,
+                    'confidence': bert_confidence,
+                    'reasoning': "BERT model not available, using NLP-based priority",
+                    'available': False
+                }
         
-        if bert_model and bert_model.is_trained:
-            event_for_bert = {
-                'title': nlp_result.get('title', 'Voice Event'),
-                'description': nlp_result.get('description', cleaning_result['cleaned_text']),
-                'start_time': nlp_result.get('start_time', datetime.now().isoformat()),
-                'location': nlp_result.get('location', '')
-            }
-            bert_priority, bert_confidence = bert_model.predict(event_for_bert)
-        else:
-            bert_priority = nlp_result.get('priority', 3)
-            bert_confidence = 0.6
-        
-        return {
-            'voice_cleaning': cleaning_result,
-            'nlp_analysis': nlp_result,
-            'bert_analysis': {
-                'priority': bert_priority,
-                'confidence': bert_confidence,
-                'available': bert_model and bert_model.is_trained
-            },
-            'recommended_event': {
-                'title': nlp_result.get('title', 'Voice Event'),
-                'description': cleaning_result['cleaned_text'],
-                'priority': bert_priority,
-                'confidence': bert_confidence
+        # Prepare response based on what the frontend expects
+        response = {
+            'bert_classification': bert_analysis,
+            'nlp_analysis': {
+                'keywords': nlp_result.get('keywords', []),
+                'sentiment': nlp_result.get('sentiment', 'neutral'),
+                'urgency_score': nlp_result.get('urgency', 0.5)
             }
         }
+        
+        if request.detailed_analysis:
+            response.update({
+                'voice_cleaning': cleaning_result,
+                'full_nlp_analysis': nlp_result,
+                'recommended_event': {
+                    'title': nlp_result.get('title', 'Voice Event'),
+                    'description': cleaning_result['cleaned_text'],
+                    'priority': bert_analysis.get('priority', 3),
+                    'confidence': bert_analysis.get('confidence', 0.6)
+                }
+            })
+        
+        return response
         
     except Exception as e:
         logger.error(f"❌ Voice analysis failed: {str(e)}")
