@@ -29,6 +29,8 @@ class Settings(BaseSettings):
         env_file = ".env"
         case_sensitive = False
         extra = "ignore"  # Ignore extra environment variables
+    # Allow attribute names starting with model_ without warnings
+    protected_namespaces = ("settings_",)
 
 @lru_cache()
 def get_settings():
