@@ -1,0 +1,4910 @@
+{
+  "components": {
+    "schemas": {
+      "BatchConflictCheckRequest": {
+        "description": "Request schema for batch conflict checking",
+        "properties": {
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/ConflictCheckRequest"
+            },
+            "title": "Events",
+            "type": "array"
+          },
+          "global_buffer_minutes": {
+            "anyOf": [
+              {
+                "maximum": 120.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 15,
+            "title": "Global Buffer Minutes"
+          }
+        },
+        "required": [
+          "events"
+        ],
+        "title": "BatchConflictCheckRequest",
+        "type": "object"
+      },
+      "BatchPredictionRequest": {
+        "properties": {
+          "events": {
+            "description": "List of events to classify",
+            "items": {
+              "$ref": "#/components/schemas/EventData"
+            },
+            "title": "Events",
+            "type": "array"
+          },
+          "user_context": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "User behavioral context",
+            "title": "User Context"
+          }
+        },
+        "required": [
+          "events"
+        ],
+        "title": "BatchPredictionRequest",
+        "type": "object"
+      },
+      "BatchPredictionResponse": {
+        "properties": {
+          "average_confidence": {
+            "description": "Average confidence across all predictions",
+            "title": "Average Confidence",
+            "type": "number"
+          },
+          "predictions": {
+            "description": "List of predictions",
+            "items": {
+              "$ref": "#/components/schemas/PriorityPredictionResponse"
+            },
+            "title": "Predictions",
+            "type": "array"
+          },
+          "total_events": {
+            "description": "Total number of events processed",
+            "title": "Total Events",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "predictions",
+          "total_events",
+          "average_confidence"
+        ],
+        "title": "BatchPredictionResponse",
+        "type": "object"
+      },
+      "Body_detect_scheduling_conflicts_api_v1_nlp_detect_conflicts_post": {
+        "properties": {
+          "new_event": {
+            "$ref": "#/components/schemas/EventData"
+          },
+          "user_context": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Context"
+          }
+        },
+        "required": [
+          "new_event"
+        ],
+        "title": "Body_detect_scheduling_conflicts_api_v1_nlp_detect_conflicts_post",
+        "type": "object"
+      },
+      "ConflictCheckRequest": {
+        "description": "Request schema for conflict detection (times treated as UTC).",
+        "properties": {
+          "buffer_minutes": {
+            "anyOf": [
+              {
+                "maximum": 120.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 15,
+            "title": "Buffer Minutes"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "end_time": {
+            "format": "date-time",
+            "title": "End Time",
+            "type": "string"
+          },
+          "is_all_day": {
+            "default": false,
+            "title": "Is All Day",
+            "type": "boolean"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "start_time": {
+            "format": "date-time",
+            "title": "Start Time",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "start_time",
+          "end_time"
+        ],
+        "title": "ConflictCheckRequest",
+        "type": "object"
+      },
+      "ConflictDetectionResponse": {
+        "description": "Response schema for detected conflicts",
+        "properties": {
+          "affected_event_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Affected Event Ids",
+            "type": "array"
+          },
+          "buffer_minutes": {
+            "title": "Buffer Minutes",
+            "type": "integer"
+          },
+          "confidence": {
+            "title": "Confidence",
+            "type": "number"
+          },
+          "conflict_id": {
+            "title": "Conflict Id",
+            "type": "string"
+          },
+          "conflict_type": {
+            "title": "Conflict Type",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "impact_score": {
+            "title": "Impact Score",
+            "type": "number"
+          },
+          "severity": {
+            "title": "Severity",
+            "type": "string"
+          }
+        },
+        "required": [
+          "conflict_id",
+          "conflict_type",
+          "severity",
+          "affected_event_ids",
+          "description",
+          "buffer_minutes",
+          "confidence",
+          "impact_score"
+        ],
+        "title": "ConflictDetectionResponse",
+        "type": "object"
+      },
+      "ConflictReportResponse": {
+        "description": "Response schema for conflict analysis report",
+        "properties": {
+          "average_impact_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Average Impact Score"
+          },
+          "recommendations": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Recommendations",
+            "type": "array"
+          },
+          "severity_breakdown": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Severity Breakdown",
+            "type": "object"
+          },
+          "total_conflicts": {
+            "title": "Total Conflicts",
+            "type": "integer"
+          },
+          "type_breakdown": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Type Breakdown",
+            "type": "object"
+          }
+        },
+        "required": [
+          "total_conflicts",
+          "severity_breakdown",
+          "type_breakdown",
+          "average_impact_score",
+          "recommendations"
+        ],
+        "title": "ConflictReportResponse",
+        "type": "object"
+      },
+      "ConflictResolutionResponse": {
+        "description": "Response schema for conflict resolution",
+        "properties": {
+          "alternatives": {
+            "items": {
+              "$ref": "#/components/schemas/TimeSlotAlternative"
+            },
+            "title": "Alternatives",
+            "type": "array"
+          },
+          "auto_resolution": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TimeSlotAlternative"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "confidence": {
+            "title": "Confidence",
+            "type": "number"
+          },
+          "conflict_id": {
+            "title": "Conflict Id",
+            "type": "string"
+          },
+          "reasoning": {
+            "title": "Reasoning",
+            "type": "string"
+          },
+          "resolution_id": {
+            "title": "Resolution Id",
+            "type": "string"
+          },
+          "strategy": {
+            "title": "Strategy",
+            "type": "string"
+          }
+        },
+        "required": [
+          "resolution_id",
+          "conflict_id",
+          "alternatives",
+          "strategy",
+          "confidence",
+          "reasoning"
+        ],
+        "title": "ConflictResolutionResponse",
+        "type": "object"
+      },
+      "EventCreate": {
+        "properties": {
+          "actual_duration": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual Duration"
+          },
+          "classification_method": {
+            "anyOf": [
+              {
+                "maxLength": 50,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Classification Method"
+          },
+          "created_via": {
+            "anyOf": [
+              {
+                "pattern": "^(voice|text|manual|imported)$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created Via"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "effectiveness_rating": {
+            "anyOf": [
+              {
+                "maximum": 5.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Effectiveness Rating"
+          },
+          "end_time": {
+            "format": "date-time",
+            "title": "End Time",
+            "type": "string"
+          },
+          "energy_level": {
+            "anyOf": [
+              {
+                "maximum": 5.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Energy Level"
+          },
+          "is_all_day": {
+            "default": false,
+            "title": "Is All Day",
+            "type": "boolean"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "meeting_outcome": {
+            "anyOf": [
+              {
+                "pattern": "^(productive|waste|neutral)$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meeting Outcome"
+          },
+          "planned_duration": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Planned Duration"
+          },
+          "priority_confidence": {
+            "anyOf": [
+              {
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Priority Confidence"
+          },
+          "priority_level": {
+            "anyOf": [
+              {
+                "maximum": 5.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Priority Level"
+          },
+          "recurrence_rule": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recurrence Rule"
+          },
+          "start_time": {
+            "format": "date-time",
+            "title": "Start Time",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "start_time",
+          "end_time"
+        ],
+        "title": "EventCreate",
+        "type": "object"
+      },
+      "EventData": {
+        "properties": {
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Event description",
+            "title": "Description"
+          },
+          "end_time": {
+            "description": "Event end time (ISO format)",
+            "title": "End Time",
+            "type": "string"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Event location",
+            "title": "Location"
+          },
+          "start_time": {
+            "description": "Event start time (ISO format)",
+            "title": "Start Time",
+            "type": "string"
+          },
+          "title": {
+            "description": "Event title",
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "start_time",
+          "end_time"
+        ],
+        "title": "EventData",
+        "type": "object"
+      },
+      "EventResponse": {
+        "properties": {
+          "actual_duration": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual Duration"
+          },
+          "classification_method": {
+            "anyOf": [
+              {
+                "maxLength": 50,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "manual",
+            "title": "Classification Method"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "created_via": {
+            "anyOf": [
+              {
+                "pattern": "^(voice|text|manual|imported)$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "manual",
+            "title": "Created Via"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "effectiveness_rating": {
+            "anyOf": [
+              {
+                "maximum": 5.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 3,
+            "title": "Effectiveness Rating"
+          },
+          "end_time": {
+            "format": "date-time",
+            "title": "End Time",
+            "type": "string"
+          },
+          "energy_level": {
+            "anyOf": [
+              {
+                "maximum": 5.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 3,
+            "title": "Energy Level"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "is_all_day": {
+            "default": false,
+            "title": "Is All Day",
+            "type": "boolean"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "meeting_outcome": {
+            "anyOf": [
+              {
+                "pattern": "^(productive|waste|neutral)$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "neutral",
+            "title": "Meeting Outcome"
+          },
+          "planned_duration": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Planned Duration"
+          },
+          "priority_confidence": {
+            "anyOf": [
+              {
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 0.0,
+            "title": "Priority Confidence"
+          },
+          "priority_level": {
+            "anyOf": [
+              {
+                "maximum": 5.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 3,
+            "title": "Priority Level"
+          },
+          "recurrence_rule": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recurrence Rule"
+          },
+          "start_time": {
+            "format": "date-time",
+            "title": "Start Time",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "user_id": {
+            "format": "uuid",
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "start_time",
+          "end_time",
+          "id",
+          "user_id",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "EventResponse",
+        "type": "object"
+      },
+      "EventUpdate": {
+        "properties": {
+          "actual_duration": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual Duration"
+          },
+          "classification_method": {
+            "anyOf": [
+              {
+                "maxLength": 50,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Classification Method"
+          },
+          "created_via": {
+            "anyOf": [
+              {
+                "pattern": "^(voice|text|manual|imported)$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created Via"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "effectiveness_rating": {
+            "anyOf": [
+              {
+                "maximum": 5.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Effectiveness Rating"
+          },
+          "end_time": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Time"
+          },
+          "energy_level": {
+            "anyOf": [
+              {
+                "maximum": 5.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Energy Level"
+          },
+          "is_all_day": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is All Day"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "meeting_outcome": {
+            "anyOf": [
+              {
+                "pattern": "^(productive|waste|neutral)$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meeting Outcome"
+          },
+          "planned_duration": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Planned Duration"
+          },
+          "priority_confidence": {
+            "anyOf": [
+              {
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Priority Confidence"
+          },
+          "priority_level": {
+            "anyOf": [
+              {
+                "maximum": 5.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Priority Level"
+          },
+          "recurrence_rule": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recurrence Rule"
+          },
+          "start_time": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Time"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          }
+        },
+        "title": "EventUpdate",
+        "type": "object"
+      },
+      "EventWithReminders": {
+        "properties": {
+          "actual_duration": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual Duration"
+          },
+          "classification_method": {
+            "anyOf": [
+              {
+                "maxLength": 50,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "manual",
+            "title": "Classification Method"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "created_via": {
+            "anyOf": [
+              {
+                "pattern": "^(voice|text|manual|imported)$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "manual",
+            "title": "Created Via"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "effectiveness_rating": {
+            "anyOf": [
+              {
+                "maximum": 5.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 3,
+            "title": "Effectiveness Rating"
+          },
+          "end_time": {
+            "format": "date-time",
+            "title": "End Time",
+            "type": "string"
+          },
+          "energy_level": {
+            "anyOf": [
+              {
+                "maximum": 5.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 3,
+            "title": "Energy Level"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "is_all_day": {
+            "default": false,
+            "title": "Is All Day",
+            "type": "boolean"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "meeting_outcome": {
+            "anyOf": [
+              {
+                "pattern": "^(productive|waste|neutral)$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "neutral",
+            "title": "Meeting Outcome"
+          },
+          "planned_duration": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Planned Duration"
+          },
+          "priority_confidence": {
+            "anyOf": [
+              {
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 0.0,
+            "title": "Priority Confidence"
+          },
+          "priority_level": {
+            "anyOf": [
+              {
+                "maximum": 5.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 3,
+            "title": "Priority Level"
+          },
+          "recurrence_rule": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recurrence Rule"
+          },
+          "reminders": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ReminderResponse"
+            },
+            "title": "Reminders",
+            "type": "array"
+          },
+          "start_time": {
+            "format": "date-time",
+            "title": "Start Time",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "user_id": {
+            "format": "uuid",
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "start_time",
+          "end_time",
+          "id",
+          "user_id",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "EventWithReminders",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "ModelStatusResponse": {
+        "properties": {
+          "bert_available": {
+            "title": "Bert Available",
+            "type": "boolean"
+          },
+          "model_info": {
+            "title": "Model Info",
+            "type": "object"
+          },
+          "model_trained": {
+            "title": "Model Trained",
+            "type": "boolean"
+          },
+          "performance_stats": {
+            "title": "Performance Stats",
+            "type": "object"
+          }
+        },
+        "required": [
+          "bert_available",
+          "model_trained",
+          "model_info",
+          "performance_stats"
+        ],
+        "title": "ModelStatusResponse",
+        "type": "object"
+      },
+      "PriorityExplanationResponse": {
+        "properties": {
+          "confidence": {
+            "title": "Confidence",
+            "type": "number"
+          },
+          "feature_analysis": {
+            "title": "Feature Analysis",
+            "type": "object"
+          },
+          "priority": {
+            "title": "Priority",
+            "type": "integer"
+          },
+          "priority_label": {
+            "title": "Priority Label",
+            "type": "string"
+          },
+          "reasoning": {
+            "title": "Reasoning",
+            "type": "object"
+          }
+        },
+        "required": [
+          "priority",
+          "priority_label",
+          "confidence",
+          "reasoning",
+          "feature_analysis"
+        ],
+        "title": "PriorityExplanationResponse",
+        "type": "object"
+      },
+      "PriorityPredictionRequest": {
+        "properties": {
+          "event": {
+            "$ref": "#/components/schemas/EventData"
+          },
+          "user_context": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "User behavioral context",
+            "title": "User Context"
+          }
+        },
+        "required": [
+          "event"
+        ],
+        "title": "PriorityPredictionRequest",
+        "type": "object"
+      },
+      "PriorityPredictionResponse": {
+        "properties": {
+          "confidence": {
+            "description": "Prediction confidence 0-1",
+            "title": "Confidence",
+            "type": "number"
+          },
+          "model_used": {
+            "description": "Model type used for prediction",
+            "title": "Model Used",
+            "type": "string"
+          },
+          "priority": {
+            "description": "Priority level 1-5",
+            "title": "Priority",
+            "type": "integer"
+          },
+          "priority_label": {
+            "description": "Human-readable priority label",
+            "title": "Priority Label",
+            "type": "string"
+          },
+          "processing_time_ms": {
+            "description": "Processing time in milliseconds",
+            "title": "Processing Time Ms",
+            "type": "number"
+          }
+        },
+        "required": [
+          "priority",
+          "priority_label",
+          "confidence",
+          "model_used",
+          "processing_time_ms"
+        ],
+        "title": "PriorityPredictionResponse",
+        "type": "object"
+      },
+      "ReminderCreate": {
+        "properties": {
+          "minutes_before": {
+            "minimum": 0.0,
+            "title": "Minutes Before",
+            "type": "integer"
+          },
+          "notification_type": {
+            "default": "in_app",
+            "title": "Notification Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "minutes_before"
+        ],
+        "title": "ReminderCreate",
+        "type": "object"
+      },
+      "ReminderResponse": {
+        "properties": {
+          "created_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "event_id": {
+            "format": "uuid",
+            "title": "Event Id",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "is_sent": {
+            "title": "Is Sent",
+            "type": "boolean"
+          },
+          "minutes_before": {
+            "minimum": 0.0,
+            "title": "Minutes Before",
+            "type": "integer"
+          },
+          "notification_type": {
+            "default": "in_app",
+            "title": "Notification Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "minutes_before",
+          "id",
+          "event_id",
+          "is_sent",
+          "created_at"
+        ],
+        "title": "ReminderResponse",
+        "type": "object"
+      },
+      "TimeSlotAlternative": {
+        "description": "Alternative time slot suggestion",
+        "properties": {
+          "confidence": {
+            "title": "Confidence",
+            "type": "number"
+          },
+          "end_time": {
+            "format": "date-time",
+            "title": "End Time",
+            "type": "string"
+          },
+          "productivity_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Productivity Score"
+          },
+          "reasoning": {
+            "title": "Reasoning",
+            "type": "string"
+          },
+          "start_time": {
+            "format": "date-time",
+            "title": "Start Time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "start_time",
+          "end_time",
+          "confidence",
+          "reasoning"
+        ],
+        "title": "TimeSlotAlternative",
+        "type": "object"
+      },
+      "UserCreate": {
+        "properties": {
+          "cognito_sub": {
+            "description": "AWS Cognito user identifier",
+            "title": "Cognito Sub",
+            "type": "string"
+          },
+          "email": {
+            "format": "email",
+            "title": "Email",
+            "type": "string"
+          },
+          "full_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Full Name"
+          },
+          "preferences": {
+            "title": "Preferences",
+            "type": "object"
+          }
+        },
+        "required": [
+          "email",
+          "cognito_sub"
+        ],
+        "title": "UserCreate",
+        "type": "object"
+      },
+      "UserResponse": {
+        "properties": {
+          "cognito_sub": {
+            "title": "Cognito Sub",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "email": {
+            "format": "email",
+            "title": "Email",
+            "type": "string"
+          },
+          "full_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Full Name"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "is_active": {
+            "title": "Is Active",
+            "type": "boolean"
+          },
+          "preferences": {
+            "title": "Preferences",
+            "type": "object"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "id",
+          "cognito_sub",
+          "is_active",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "UserResponse",
+        "type": "object"
+      },
+      "UserUpdate": {
+        "properties": {
+          "full_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Full Name"
+          },
+          "is_active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Active"
+          },
+          "preferences": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preferences"
+          }
+        },
+        "title": "UserUpdate",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "description": "AI-Powered Smart Calendar System with BERT Priority Classification",
+    "title": "KairoCal API",
+    "version": "1.0.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/": {
+      "get": {
+        "operationId": "read_root__get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Read Root"
+      }
+    },
+    "/api/v1/analytics/ai/insights": {
+      "get": {
+        "description": "Get AI-powered insights using machine learning algorithms",
+        "operationId": "get_ai_insights_api_v1_analytics_ai_insights_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "cognito_sub",
+            "required": true,
+            "schema": {
+              "title": "Cognito Sub",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Analysis period in days",
+            "in": "query",
+            "name": "period_days",
+            "required": false,
+            "schema": {
+              "default": 30,
+              "description": "Analysis period in days",
+              "maximum": 90,
+              "minimum": 7,
+              "title": "Period Days",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Ai Insights",
+        "tags": [
+          "analytics"
+        ]
+      }
+    },
+    "/api/v1/analytics/bert/performance": {
+      "get": {
+        "description": "Analyze BERT classification performance and accuracy metrics\n\nReturns:\n    BERT classification statistics, confidence patterns, and performance insights",
+        "operationId": "get_bert_performance_metrics_api_v1_analytics_bert_performance_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "cognito_sub",
+            "required": true,
+            "schema": {
+              "title": "Cognito Sub",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Number of days to analyze",
+            "in": "query",
+            "name": "days_back",
+            "required": false,
+            "schema": {
+              "default": 30,
+              "description": "Number of days to analyze",
+              "maximum": 365,
+              "minimum": 7,
+              "title": "Days Back",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Include confidence score distribution",
+            "in": "query",
+            "name": "include_confidence_distribution",
+            "required": false,
+            "schema": {
+              "default": true,
+              "description": "Include confidence score distribution",
+              "title": "Include Confidence Distribution",
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Bert Performance Metrics",
+        "tags": [
+          "analytics"
+        ]
+      }
+    },
+    "/api/v1/analytics/conflicts/resolution-effectiveness": {
+      "get": {
+        "description": "Analyze effectiveness of priority-based conflict resolution\n\nReturns:\n    Conflict resolution statistics and effectiveness metrics",
+        "operationId": "get_conflict_resolution_effectiveness_api_v1_analytics_conflicts_resolution_effectiveness_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "cognito_sub",
+            "required": true,
+            "schema": {
+              "title": "Cognito Sub",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Number of days to analyze",
+            "in": "query",
+            "name": "days_back",
+            "required": false,
+            "schema": {
+              "default": 30,
+              "description": "Number of days to analyze",
+              "maximum": 365,
+              "minimum": 7,
+              "title": "Days Back",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Conflict Resolution Effectiveness",
+        "tags": [
+          "analytics"
+        ]
+      }
+    },
+    "/api/v1/analytics/dashboard/weekly-summary": {
+      "get": {
+        "description": "Get comprehensive weekly analytics summary for main dashboard",
+        "operationId": "get_weekly_analytics_summary_api_v1_analytics_dashboard_weekly_summary_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "cognito_sub",
+            "required": true,
+            "schema": {
+              "title": "Cognito Sub",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Weekly Analytics Summary",
+        "tags": [
+          "analytics"
+        ]
+      }
+    },
+    "/api/v1/analytics/health": {
+      "get": {
+        "description": "Health check for analytics service",
+        "operationId": "analytics_health_check_api_v1_analytics_health_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Analytics Health Check",
+        "tags": [
+          "analytics"
+        ]
+      }
+    },
+    "/api/v1/analytics/priority/trends": {
+      "get": {
+        "description": "Analyze priority distribution trends over time\n\nReturns:\n    Priority distribution patterns, trend analysis, and insights",
+        "operationId": "get_priority_trends_api_v1_analytics_priority_trends_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "cognito_sub",
+            "required": true,
+            "schema": {
+              "title": "Cognito Sub",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Number of days to analyze",
+            "in": "query",
+            "name": "days_back",
+            "required": false,
+            "schema": {
+              "default": 30,
+              "description": "Number of days to analyze",
+              "maximum": 365,
+              "minimum": 7,
+              "title": "Days Back",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Granularity: daily, weekly, monthly",
+            "in": "query",
+            "name": "granularity",
+            "required": false,
+            "schema": {
+              "default": "weekly",
+              "description": "Granularity: daily, weekly, monthly",
+              "title": "Granularity",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Priority Trends",
+        "tags": [
+          "analytics"
+        ]
+      }
+    },
+    "/api/v1/analytics/productivity/insights": {
+      "get": {
+        "description": "Get behavioral insights from calendar patterns",
+        "operationId": "get_behavior_insights_api_v1_analytics_productivity_insights_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "cognito_sub",
+            "required": true,
+            "schema": {
+              "title": "Cognito Sub",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Start date (YYYY-MM-DD)",
+            "in": "query",
+            "name": "start_date",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Start date (YYYY-MM-DD)",
+              "title": "Start Date"
+            }
+          },
+          {
+            "description": "End date (YYYY-MM-DD)",
+            "in": "query",
+            "name": "end_date",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "End date (YYYY-MM-DD)",
+              "title": "End Date"
+            }
+          },
+          {
+            "description": "Period: week, month, quarter",
+            "in": "query",
+            "name": "period",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": "month",
+              "description": "Period: week, month, quarter",
+              "title": "Period"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Behavior Insights",
+        "tags": [
+          "analytics"
+        ]
+      }
+    },
+    "/api/v1/analytics/productivity/metrics": {
+      "get": {
+        "description": "Get comprehensive productivity metrics for Analytics Dashboard\n\nReturns:\n    Complete productivity analysis including scores, patterns, and recommendations",
+        "operationId": "get_productivity_metrics_api_v1_analytics_productivity_metrics_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "cognito_sub",
+            "required": true,
+            "schema": {
+              "title": "Cognito Sub",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Start date (YYYY-MM-DD)",
+            "in": "query",
+            "name": "start_date",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Start date (YYYY-MM-DD)",
+              "title": "Start Date"
+            }
+          },
+          {
+            "description": "End date (YYYY-MM-DD)",
+            "in": "query",
+            "name": "end_date",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "End date (YYYY-MM-DD)",
+              "title": "End Date"
+            }
+          },
+          {
+            "description": "Period: week, month, quarter",
+            "in": "query",
+            "name": "period",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": "week",
+              "description": "Period: week, month, quarter",
+              "title": "Period"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Productivity Metrics",
+        "tags": [
+          "analytics"
+        ]
+      }
+    },
+    "/api/v1/analytics/productivity/patterns": {
+      "get": {
+        "description": "Get time-based productivity patterns for optimal scheduling",
+        "operationId": "get_time_patterns_api_v1_analytics_productivity_patterns_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "cognito_sub",
+            "required": true,
+            "schema": {
+              "title": "Cognito Sub",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Start date (YYYY-MM-DD)",
+            "in": "query",
+            "name": "start_date",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Start date (YYYY-MM-DD)",
+              "title": "Start Date"
+            }
+          },
+          {
+            "description": "End date (YYYY-MM-DD)",
+            "in": "query",
+            "name": "end_date",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "End date (YYYY-MM-DD)",
+              "title": "End Date"
+            }
+          },
+          {
+            "description": "Period: week, month, quarter",
+            "in": "query",
+            "name": "period",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": "month",
+              "description": "Period: week, month, quarter",
+              "title": "Period"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Time Patterns",
+        "tags": [
+          "analytics"
+        ]
+      }
+    },
+    "/api/v1/analytics/trends/comparison": {
+      "get": {
+        "description": "Get productivity trends comparing multiple periods",
+        "operationId": "get_productivity_trends_api_v1_analytics_trends_comparison_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "cognito_sub",
+            "required": true,
+            "schema": {
+              "title": "Cognito Sub",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Number of periods to compare",
+            "in": "query",
+            "name": "compare_periods",
+            "required": false,
+            "schema": {
+              "default": 4,
+              "description": "Number of periods to compare",
+              "maximum": 12,
+              "minimum": 2,
+              "title": "Compare Periods",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Period type: week, month",
+            "in": "query",
+            "name": "period_type",
+            "required": false,
+            "schema": {
+              "default": "week",
+              "description": "Period type: week, month",
+              "title": "Period Type",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Productivity Trends",
+        "tags": [
+          "analytics"
+        ]
+      }
+    },
+    "/api/v1/analytics/user/{cognito_sub}/feedback": {
+      "post": {
+        "description": "Submit feedback on scheduling suggestions to improve ML recommendations\n\nExpected feedback_data format:\n{\n    \"suggestion_id\": \"optional_id\",\n    \"selected_time\": \"2024-01-15T10:00:00\",\n    \"rating\": 5,  # 1-5 stars\n    \"reason\": \"Perfect timing for my schedule\",\n    \"alternative_preferred\": \"2024-01-15T14:00:00\"  # optional\n}",
+        "operationId": "submit_scheduling_feedback_api_v1_analytics_user__cognito_sub__feedback_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "cognito_sub",
+            "required": true,
+            "schema": {
+              "title": "Cognito Sub",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "title": "Feedback Data",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Submit Scheduling Feedback Api V1 Analytics User  Cognito Sub  Feedback Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Submit Scheduling Feedback",
+        "tags": [
+          "analytics"
+        ]
+      }
+    },
+    "/api/v1/analytics/user/{cognito_sub}/insights": {
+      "get": {
+        "description": "Get comprehensive behavior insights for a user\n\nReturns user's scheduling patterns, preferences, and recommendations",
+        "operationId": "get_user_insights_api_v1_analytics_user__cognito_sub__insights_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "cognito_sub",
+            "required": true,
+            "schema": {
+              "title": "Cognito Sub",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Get User Insights Api V1 Analytics User  Cognito Sub  Insights Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get User Insights",
+        "tags": [
+          "analytics"
+        ]
+      }
+    },
+    "/api/v1/analytics/user/{cognito_sub}/meeting-patterns": {
+      "get": {
+        "description": "Analyze user's meeting patterns and scheduling habits",
+        "operationId": "get_meeting_patterns_api_v1_analytics_user__cognito_sub__meeting_patterns_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "cognito_sub",
+            "required": true,
+            "schema": {
+              "title": "Cognito Sub",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Number of days to analyze",
+            "in": "query",
+            "name": "days_back",
+            "required": false,
+            "schema": {
+              "default": 30,
+              "description": "Number of days to analyze",
+              "maximum": 365,
+              "minimum": 7,
+              "title": "Days Back",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Get Meeting Patterns Api V1 Analytics User  Cognito Sub  Meeting Patterns Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Meeting Patterns",
+        "tags": [
+          "analytics"
+        ]
+      }
+    },
+    "/api/v1/analytics/user/{cognito_sub}/optimization-report": {
+      "get": {
+        "description": "Generate a comprehensive schedule optimization report",
+        "operationId": "get_schedule_optimization_report_api_v1_analytics_user__cognito_sub__optimization_report_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "cognito_sub",
+            "required": true,
+            "schema": {
+              "title": "Cognito Sub",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Get Schedule Optimization Report Api V1 Analytics User  Cognito Sub  Optimization Report Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Schedule Optimization Report",
+        "tags": [
+          "analytics"
+        ]
+      }
+    },
+    "/api/v1/analytics/user/{cognito_sub}/productivity-score": {
+      "get": {
+        "description": "Get user's current productivity score and trends",
+        "operationId": "get_productivity_score_api_v1_analytics_user__cognito_sub__productivity_score_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "cognito_sub",
+            "required": true,
+            "schema": {
+              "title": "Cognito Sub",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Get Productivity Score Api V1 Analytics User  Cognito Sub  Productivity Score Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Productivity Score",
+        "tags": [
+          "analytics"
+        ]
+      }
+    },
+    "/api/v1/analytics/user/{cognito_sub}/time-suggestions": {
+      "get": {
+        "description": "Get AI-powered time slot suggestions for scheduling a new event\n\nArgs:\n    cognito_sub: User's Cognito identifier\n    duration: Event duration in minutes (15-480)\n    preferred_date: Optional preferred date in YYYY-MM-DD format\n\nReturns:\n    List of optimal time slot suggestions with confidence scores",
+        "operationId": "get_smart_time_suggestions_api_v1_analytics_user__cognito_sub__time_suggestions_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "cognito_sub",
+            "required": true,
+            "schema": {
+              "title": "Cognito Sub",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Event duration in minutes",
+            "in": "query",
+            "name": "duration",
+            "required": true,
+            "schema": {
+              "description": "Event duration in minutes",
+              "maximum": 480,
+              "minimum": 15,
+              "title": "Duration",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Preferred date in ISO format (YYYY-MM-DD)",
+            "in": "query",
+            "name": "preferred_date",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Preferred date in ISO format (YYYY-MM-DD)",
+              "title": "Preferred Date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Get Smart Time Suggestions Api V1 Analytics User  Cognito Sub  Time Suggestions Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Smart Time Suggestions",
+        "tags": [
+          "analytics"
+        ]
+      }
+    },
+    "/api/v1/conflicts/analyze": {
+      "post": {
+        "description": "Generate comprehensive conflict analysis report\n\nThis endpoint provides detailed analysis of conflicts including severity\nbreakdown, impact assessment, and actionable recommendations.",
+        "operationId": "analyze_conflicts_api_v1_conflicts_analyze_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "cognito_sub",
+            "required": true,
+            "schema": {
+              "title": "Cognito Sub",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Conflict engine: fallback|basic_v1",
+            "in": "query",
+            "name": "engine",
+            "required": false,
+            "schema": {
+              "default": "fallback",
+              "description": "Conflict engine: fallback|basic_v1",
+              "title": "Engine",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConflictCheckRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConflictReportResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Analyze Conflicts",
+        "tags": [
+          "conflicts"
+        ]
+      }
+    },
+    "/api/v1/conflicts/batch-check": {
+      "post": {
+        "description": "Check conflicts for multiple events at once\n\nThis endpoint allows bulk conflict checking for multiple proposed events,\nuseful for schedule planning and bulk event creation.",
+        "operationId": "batch_check_conflicts_api_v1_conflicts_batch_check_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "cognito_sub",
+            "required": true,
+            "schema": {
+              "title": "Cognito Sub",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BatchConflictCheckRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Batch Check Conflicts Api V1 Conflicts Batch Check Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Batch Check Conflicts",
+        "tags": [
+          "conflicts"
+        ]
+      }
+    },
+    "/api/v1/conflicts/check": {
+      "post": {
+        "description": "Check for conflicts with a proposed new event\n\nThis endpoint analyzes a potential new event against the user's existing\nschedule and returns any detected conflicts with detailed information.",
+        "operationId": "check_conflicts_api_v1_conflicts_check_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "cognito_sub",
+            "required": true,
+            "schema": {
+              "title": "Cognito Sub",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Conflict engine: fallback|basic_v1",
+            "in": "query",
+            "name": "engine",
+            "required": false,
+            "schema": {
+              "default": "fallback",
+              "description": "Conflict engine: fallback|basic_v1",
+              "title": "Engine",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConflictCheckRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ConflictDetectionResponse"
+                  },
+                  "title": "Response Check Conflicts Api V1 Conflicts Check Post",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Check Conflicts",
+        "tags": [
+          "conflicts"
+        ]
+      }
+    },
+    "/api/v1/conflicts/resolve": {
+      "post": {
+        "description": "Get intelligent resolutions for scheduling conflicts\n\nThis endpoint first detects conflicts and then generates smart alternatives\nusing AI-powered analysis of user behavior patterns.",
+        "operationId": "resolve_conflicts_api_v1_conflicts_resolve_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "cognito_sub",
+            "required": true,
+            "schema": {
+              "title": "Cognito Sub",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Automatically select best resolution",
+            "in": "query",
+            "name": "auto_resolve",
+            "required": false,
+            "schema": {
+              "default": false,
+              "description": "Automatically select best resolution",
+              "title": "Auto Resolve",
+              "type": "boolean"
+            }
+          },
+          {
+            "description": "Maximum alternatives to return",
+            "in": "query",
+            "name": "max_alternatives",
+            "required": false,
+            "schema": {
+              "default": 5,
+              "description": "Maximum alternatives to return",
+              "maximum": 10,
+              "minimum": 1,
+              "title": "Max Alternatives",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Conflict engine: fallback|basic_v1",
+            "in": "query",
+            "name": "engine",
+            "required": false,
+            "schema": {
+              "default": "fallback",
+              "description": "Conflict engine: fallback|basic_v1",
+              "title": "Engine",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConflictCheckRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ConflictResolutionResponse"
+                  },
+                  "title": "Response Resolve Conflicts Api V1 Conflicts Resolve Post",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Resolve Conflicts",
+        "tags": [
+          "conflicts"
+        ]
+      }
+    },
+    "/api/v1/conflicts/smart-reschedule/{event_id}": {
+      "post": {
+        "description": "Intelligently reschedule an existing event to avoid conflicts\n\nThis endpoint analyzes an existing event and suggests optimal times\nto reschedule it, taking into account user patterns and preferences.",
+        "operationId": "smart_reschedule_event_api_v1_conflicts_smart_reschedule__event_id__post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cognito_sub",
+            "required": true,
+            "schema": {
+              "title": "Cognito Sub",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Preferred date for rescheduling",
+            "in": "query",
+            "name": "preferred_date",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Preferred date for rescheduling",
+              "title": "Preferred Date"
+            }
+          },
+          {
+            "in": "query",
+            "name": "max_alternatives",
+            "required": false,
+            "schema": {
+              "default": 5,
+              "maximum": 10,
+              "minimum": 1,
+              "title": "Max Alternatives",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Smart Reschedule Event",
+        "tags": [
+          "conflicts"
+        ]
+      }
+    },
+    "/api/v1/conflicts/user-patterns": {
+      "get": {
+        "description": "Analyze user's historical conflict patterns\n\nThis endpoint analyzes the user's scheduling patterns and common sources\nof conflicts to provide insights for better scheduling.",
+        "operationId": "get_user_conflict_patterns_api_v1_conflicts_user_patterns_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "cognito_sub",
+            "required": true,
+            "schema": {
+              "title": "Cognito Sub",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Days to analyze",
+            "in": "query",
+            "name": "days_back",
+            "required": false,
+            "schema": {
+              "default": 30,
+              "description": "Days to analyze",
+              "maximum": 90,
+              "minimum": 7,
+              "title": "Days Back",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Get User Conflict Patterns Api V1 Conflicts User Patterns Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get User Conflict Patterns",
+        "tags": [
+          "conflicts"
+        ]
+      }
+    },
+    "/api/v1/database/migration-status": {
+      "get": {
+        "operationId": "migration_status_endpoint_api_v1_database_migration_status_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Migration Status Endpoint"
+      }
+    },
+    "/api/v1/database/status": {
+      "get": {
+        "operationId": "database_status_api_v1_database_status_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Database Status"
+      }
+    },
+    "/api/v1/demo/bert-features": {
+      "get": {
+        "description": "Showcase the BERT priority classification capabilities",
+        "operationId": "demo_bert_features_api_v1_demo_bert_features_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Demo Bert Features"
+      }
+    },
+    "/api/v1/events/": {
+      "get": {
+        "description": "List events for the specified user with enhanced priority filtering and statistics\n\nEnhanced features:\n- Filter by priority ranges or specific levels\n- Filter by classification method (BERT vs manual vs rule-based)\n- Sort by priority, confidence, or time\n- Include priority distribution statistics\n- BERT-enhanced metadata in responses",
+        "operationId": "list_my_events_api_v1_events__get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "cognito_sub",
+            "required": true,
+            "schema": {
+              "title": "Cognito Sub",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "start_date",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Start Date"
+            }
+          },
+          {
+            "in": "query",
+            "name": "end_date",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "End Date"
+            }
+          },
+          {
+            "description": "Minimum priority level (1=Critical, 5=Very Low)",
+            "in": "query",
+            "name": "min_priority",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 5,
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Minimum priority level (1=Critical, 5=Very Low)",
+              "title": "Min Priority"
+            }
+          },
+          {
+            "description": "Maximum priority level (1=Critical, 5=Very Low)",
+            "in": "query",
+            "name": "max_priority",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 5,
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Maximum priority level (1=Critical, 5=Very Low)",
+              "title": "Max Priority"
+            }
+          },
+          {
+            "description": "Specific priority levels to include",
+            "in": "query",
+            "name": "priority_levels",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "integer"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Specific priority levels to include",
+              "title": "Priority Levels"
+            }
+          },
+          {
+            "description": "Filter by classification method (bert, rule_based, manual)",
+            "in": "query",
+            "name": "classification_method",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by classification method (bert, rule_based, manual)",
+              "title": "Classification Method"
+            }
+          },
+          {
+            "description": "Include priority distribution statistics",
+            "in": "query",
+            "name": "include_priority_stats",
+            "required": false,
+            "schema": {
+              "default": false,
+              "description": "Include priority distribution statistics",
+              "title": "Include Priority Stats",
+              "type": "boolean"
+            }
+          },
+          {
+            "description": "Sort by: start_time, priority, confidence",
+            "in": "query",
+            "name": "sort_by",
+            "required": false,
+            "schema": {
+              "default": "start_time",
+              "description": "Sort by: start_time, priority, confidence",
+              "title": "Sort By",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Sort order: asc, desc",
+            "in": "query",
+            "name": "sort_order",
+            "required": false,
+            "schema": {
+              "default": "asc",
+              "description": "Sort order: asc, desc",
+              "title": "Sort Order",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "skip",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "title": "Skip",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/EventResponse"
+                  },
+                  "title": "Response List My Events Api V1 Events  Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List My Events",
+        "tags": [
+          "events"
+        ]
+      },
+      "post": {
+        "description": "Create a new event for the specified user with optional BERT priority classification\nEnhanced with real-time WebSocket broadcasting\n\nArgs:\n    cognito_sub: User's Cognito sub ID\n    event_data: Event creation data\n    auto_classify_priority: Whether to automatically classify priority using BERT\n    db: Database session\n    \nReturns:\n    Created event with priority classification and real-time notifications",
+        "operationId": "create_event_api_v1_events__post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "cognito_sub",
+            "required": true,
+            "schema": {
+              "title": "Cognito Sub",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Automatically classify event priority using BERT",
+            "in": "query",
+            "name": "auto_classify_priority",
+            "required": false,
+            "schema": {
+              "default": true,
+              "description": "Automatically classify event priority using BERT",
+              "title": "Auto Classify Priority",
+              "type": "boolean"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EventCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Event",
+        "tags": [
+          "events"
+        ]
+      }
+    },
+    "/api/v1/events/priority/conflicts": {
+      "get": {
+        "description": "Detect scheduling conflicts between events with different priorities\n\nUseful for:\n- Identifying scheduling optimization opportunities\n- Priority-based conflict resolution\n- Calendar efficiency analysis",
+        "operationId": "detect_priority_conflicts_api_v1_events_priority_conflicts_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "cognito_sub",
+            "required": true,
+            "schema": {
+              "title": "Cognito Sub",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Start date for conflict detection",
+            "in": "query",
+            "name": "start_date",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Start date for conflict detection",
+              "title": "Start Date"
+            }
+          },
+          {
+            "description": "End date for conflict detection",
+            "in": "query",
+            "name": "end_date",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "End date for conflict detection",
+              "title": "End Date"
+            }
+          },
+          {
+            "description": "Minimum priority difference to consider as conflict",
+            "in": "query",
+            "name": "min_priority_diff",
+            "required": false,
+            "schema": {
+              "default": 2,
+              "description": "Minimum priority difference to consider as conflict",
+              "title": "Min Priority Diff",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Detect Priority Conflicts Api V1 Events Priority Conflicts Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Detect Priority Conflicts",
+        "tags": [
+          "events"
+        ]
+      }
+    },
+    "/api/v1/events/priority/high-priority": {
+      "get": {
+        "description": "Get high-priority events (Priority 1-2) for immediate attention\n\nUseful for:\n- Dashboard priority widgets\n- Mobile app quick views\n- Urgent task notifications",
+        "operationId": "get_high_priority_events_api_v1_events_priority_high_priority_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "cognito_sub",
+            "required": true,
+            "schema": {
+              "title": "Cognito Sub",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Maximum priority level (1=Critical, 2=High)",
+            "in": "query",
+            "name": "max_priority",
+            "required": false,
+            "schema": {
+              "default": 2,
+              "description": "Maximum priority level (1=Critical, 2=High)",
+              "maximum": 5,
+              "minimum": 1,
+              "title": "Max Priority",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Maximum number of events to return",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "description": "Maximum number of events to return",
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Include only upcoming events",
+            "in": "query",
+            "name": "include_upcoming_only",
+            "required": false,
+            "schema": {
+              "default": true,
+              "description": "Include only upcoming events",
+              "title": "Include Upcoming Only",
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/EventResponse"
+                  },
+                  "title": "Response Get High Priority Events Api V1 Events Priority High Priority Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get High Priority Events",
+        "tags": [
+          "events"
+        ]
+      }
+    },
+    "/api/v1/events/priority/low-confidence": {
+      "get": {
+        "description": "Get events with low classification confidence for manual review\n\nUseful for:\n- Quality assurance of BERT classifications\n- Training data improvement\n- Manual verification workflows",
+        "operationId": "get_low_confidence_classifications_api_v1_events_priority_low_confidence_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "cognito_sub",
+            "required": true,
+            "schema": {
+              "title": "Cognito Sub",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Maximum confidence threshold",
+            "in": "query",
+            "name": "max_confidence",
+            "required": false,
+            "schema": {
+              "default": 0.6,
+              "description": "Maximum confidence threshold",
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "title": "Max Confidence",
+              "type": "number"
+            }
+          },
+          {
+            "description": "Maximum number of events to return",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "description": "Maximum number of events to return",
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/EventResponse"
+                  },
+                  "title": "Response Get Low Confidence Classifications Api V1 Events Priority Low Confidence Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Low Confidence Classifications",
+        "tags": [
+          "events"
+        ]
+      }
+    },
+    "/api/v1/events/priority/statistics": {
+      "get": {
+        "description": "Get detailed priority classification statistics for user's events\n\nReturns:\n    Comprehensive statistics about priority distribution, classification methods,\n    BERT performance, and confidence scores",
+        "operationId": "get_priority_statistics_api_v1_events_priority_statistics_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "cognito_sub",
+            "required": true,
+            "schema": {
+              "title": "Cognito Sub",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Start date for statistics",
+            "in": "query",
+            "name": "start_date",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Start date for statistics",
+              "title": "Start Date"
+            }
+          },
+          {
+            "description": "End date for statistics",
+            "in": "query",
+            "name": "end_date",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "End date for statistics",
+              "title": "End Date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Get Priority Statistics Api V1 Events Priority Statistics Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Priority Statistics",
+        "tags": [
+          "events"
+        ]
+      }
+    },
+    "/api/v1/events/{event_id}": {
+      "delete": {
+        "description": "Delete an event (only if it belongs to the specified user)",
+        "operationId": "delete_event_api_v1_events__event_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cognito_sub",
+            "required": true,
+            "schema": {
+              "title": "Cognito Sub",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Event",
+        "tags": [
+          "events"
+        ]
+      },
+      "get": {
+        "description": "Get a specific event (only if it belongs to the specified user)",
+        "operationId": "get_event_api_v1_events__event_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cognito_sub",
+            "required": true,
+            "schema": {
+              "title": "Cognito Sub",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventWithReminders"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Event",
+        "tags": [
+          "events"
+        ]
+      },
+      "put": {
+        "description": "Update an event (only if it belongs to the specified user)",
+        "operationId": "update_event_api_v1_events__event_id__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cognito_sub",
+            "required": true,
+            "schema": {
+              "title": "Cognito Sub",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EventUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Event",
+        "tags": [
+          "events"
+        ]
+      }
+    },
+    "/api/v1/events/{event_id}/reclassify": {
+      "post": {
+        "description": "Reclassify an event's priority using the latest BERT model\n\nUseful for:\n- Updating classifications after model improvements\n- Fixing incorrect classifications\n- Batch reclassification workflows",
+        "operationId": "reclassify_event_priority_api_v1_events__event_id__reclassify_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cognito_sub",
+            "required": true,
+            "schema": {
+              "title": "Cognito Sub",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Force BERT reclassification even if already classified",
+            "in": "query",
+            "name": "force_bert",
+            "required": false,
+            "schema": {
+              "default": false,
+              "description": "Force BERT reclassification even if already classified",
+              "title": "Force Bert",
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Reclassify Event Priority",
+        "tags": [
+          "events"
+        ]
+      }
+    },
+    "/api/v1/nlp/batch-predict": {
+      "post": {
+        "description": "Predict priorities for multiple events",
+        "operationId": "batch_predict_priorities_api_v1_nlp_batch_predict_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BatchPredictionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchPredictionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Batch Predict Priorities",
+        "tags": [
+          "NLP & BERT"
+        ]
+      }
+    },
+    "/api/v1/nlp/classify-priority": {
+      "post": {
+        "description": "Simple priority classification endpoint for direct event data\n\nArgs:\n    event_data: Dictionary containing event information\n    \nReturns:\n    Priority classification result with explanation",
+        "operationId": "classify_event_priority_api_v1_nlp_classify_priority_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "title": "Event Data",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Classify Event Priority",
+        "tags": [
+          "NLP & BERT"
+        ]
+      }
+    },
+    "/api/v1/nlp/demo/features": {
+      "get": {
+        "description": "Demo endpoint showcasing BERT classifier features",
+        "operationId": "demo_bert_features_api_v1_nlp_demo_features_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Demo Bert Features",
+        "tags": [
+          "NLP & BERT"
+        ]
+      }
+    },
+    "/api/v1/nlp/demo/sample-predictions": {
+      "get": {
+        "description": "Demo endpoint showing sample BERT predictions",
+        "operationId": "demo_sample_predictions_api_v1_nlp_demo_sample_predictions_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Demo Sample Predictions",
+        "tags": [
+          "NLP & BERT"
+        ]
+      }
+    },
+    "/api/v1/nlp/detect-conflicts": {
+      "post": {
+        "description": "Detect conflicts for a new event using BERT-enhanced conflict detection",
+        "operationId": "detect_scheduling_conflicts_api_v1_nlp_detect_conflicts_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "title": "User Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_detect_scheduling_conflicts_api_v1_nlp_detect_conflicts_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Detect Scheduling Conflicts",
+        "tags": [
+          "NLP & BERT"
+        ]
+      }
+    },
+    "/api/v1/nlp/explain-priority": {
+      "post": {
+        "description": "Get detailed explanation for priority classification decision",
+        "operationId": "explain_priority_decision_api_v1_nlp_explain_priority_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PriorityPredictionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PriorityExplanationResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Explain Priority Decision",
+        "tags": [
+          "NLP & BERT"
+        ]
+      }
+    },
+    "/api/v1/nlp/health": {
+      "get": {
+        "description": "Health check for NLP services",
+        "operationId": "nlp_health_check_api_v1_nlp_health_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Nlp Health Check",
+        "tags": [
+          "NLP & BERT"
+        ]
+      }
+    },
+    "/api/v1/nlp/model-status": {
+      "get": {
+        "description": "Get BERT model status and information",
+        "operationId": "get_model_status_api_v1_nlp_model_status_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelStatusResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Model Status",
+        "tags": [
+          "NLP & BERT"
+        ]
+      }
+    },
+    "/api/v1/nlp/predict-priority": {
+      "post": {
+        "description": "Predict priority for a single event using BERT classifier",
+        "operationId": "predict_event_priority_api_v1_nlp_predict_priority_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PriorityPredictionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PriorityPredictionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Predict Event Priority",
+        "tags": [
+          "NLP & BERT"
+        ]
+      }
+    },
+    "/api/v1/reminders/": {
+      "get": {
+        "description": "List all reminders for the user's events",
+        "operationId": "list_my_reminders_api_v1_reminders__get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "cognito_sub",
+            "required": true,
+            "schema": {
+              "title": "Cognito Sub",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "skip",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "title": "Skip",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ReminderResponse"
+                  },
+                  "title": "Response List My Reminders Api V1 Reminders  Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List My Reminders",
+        "tags": [
+          "reminders"
+        ]
+      }
+    },
+    "/api/v1/reminders/{event_id}": {
+      "post": {
+        "description": "Create a new reminder for an event",
+        "operationId": "create_reminder_api_v1_reminders__event_id__post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cognito_sub",
+            "required": true,
+            "schema": {
+              "title": "Cognito Sub",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReminderCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReminderResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Reminder",
+        "tags": [
+          "reminders"
+        ]
+      }
+    },
+    "/api/v1/reminders/{reminder_id}": {
+      "delete": {
+        "description": "Delete a reminder (only if user owns the associated event)",
+        "operationId": "delete_reminder_api_v1_reminders__reminder_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "reminder_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Reminder Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cognito_sub",
+            "required": true,
+            "schema": {
+              "title": "Cognito Sub",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Reminder",
+        "tags": [
+          "reminders"
+        ]
+      },
+      "get": {
+        "description": "Get a specific reminder (only if user owns the associated event)",
+        "operationId": "get_reminder_api_v1_reminders__reminder_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "reminder_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Reminder Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cognito_sub",
+            "required": true,
+            "schema": {
+              "title": "Cognito Sub",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReminderResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Reminder",
+        "tags": [
+          "reminders"
+        ]
+      },
+      "put": {
+        "description": "Update a reminder (only if user owns the associated event)",
+        "operationId": "update_reminder_api_v1_reminders__reminder_id__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "reminder_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Reminder Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cognito_sub",
+            "required": true,
+            "schema": {
+              "title": "Cognito Sub",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReminderCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReminderResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Reminder",
+        "tags": [
+          "reminders"
+        ]
+      }
+    },
+    "/api/v1/reminders/{reminder_id}/mark-sent": {
+      "patch": {
+        "description": "Mark a reminder as sent (for notification system)",
+        "operationId": "mark_reminder_sent_api_v1_reminders__reminder_id__mark_sent_patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "reminder_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Reminder Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cognito_sub",
+            "required": true,
+            "schema": {
+              "title": "Cognito Sub",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Mark Reminder Sent",
+        "tags": [
+          "reminders"
+        ]
+      }
+    },
+    "/api/v1/status": {
+      "get": {
+        "operationId": "api_status_api_v1_status_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Api Status"
+      }
+    },
+    "/api/v1/users/": {
+      "get": {
+        "description": "List all users (admin/development only)",
+        "operationId": "list_users_api_v1_users__get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "skip",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "title": "Skip",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/UserResponse"
+                  },
+                  "title": "Response List Users Api V1 Users  Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Users",
+        "tags": [
+          "users"
+        ]
+      },
+      "post": {
+        "description": "Create a new user (simplified - no auth required for now)",
+        "operationId": "create_user_api_v1_users__post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create User",
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/api/v1/users/me": {
+      "delete": {
+        "description": "Delete user profile by cognito_sub (simplified)",
+        "operationId": "delete_current_user_api_v1_users_me_delete",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "cognito_sub",
+            "required": true,
+            "schema": {
+              "title": "Cognito Sub",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Current User",
+        "tags": [
+          "users"
+        ]
+      },
+      "get": {
+        "description": "Get user profile by cognito_sub (simplified)",
+        "operationId": "get_current_user_profile_api_v1_users_me_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "cognito_sub",
+            "required": true,
+            "schema": {
+              "title": "Cognito Sub",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Current User Profile",
+        "tags": [
+          "users"
+        ]
+      },
+      "put": {
+        "description": "Update user profile by cognito_sub (simplified)",
+        "operationId": "update_current_user_api_v1_users_me_put",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "cognito_sub",
+            "required": true,
+            "schema": {
+              "title": "Cognito Sub",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Current User",
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/api/v1/users/{user_id}": {
+      "get": {
+        "description": "Get user by ID (admin/development only)",
+        "operationId": "get_user_api_v1_users__user_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "User Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get User",
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/health": {
+      "get": {
+        "operationId": "health_check_health_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Health Check"
+      }
+    },
+    "/metrics": {
+      "get": {
+        "operationId": "metrics_endpoint_metrics_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Metrics Endpoint"
+      }
+    },
+    "/ready": {
+      "get": {
+        "operationId": "readiness_probe_ready_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Readiness Probe"
+      }
+    }
+  }
+}

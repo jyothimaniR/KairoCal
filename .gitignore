@@ -8,6 +8,7 @@ venv/
 env/
 .env
 .venv
+backend/venv/
 *.egg-info/
 dist/
 build/
@@ -87,6 +88,8 @@ backend/data/models/
 !**/config.json
 !**/package.json
 !**/tsconfig.json
+# Keep API spec snapshot under version control
+!backend/scripts/openapi_snapshot.json
 
 # Model weights and embeddings
 **/embeddings/
