@@ -431,18 +431,47 @@ class UserBehaviorAnalyzer:
         
         suggestions = []
         
-        # Start from preferred date or next business day
+        # Start from preferred date or TODAY (not tomorrow)
         start_date = self._get_next_business_day(preferred_date)
         
-        # Look ahead for the next 14 days (increased from 7)
-        for day_offset in range(14):
-            check_date = start_date + timedelta(days=day_offset)
-            day_suggestions = self._generate_day_suggestions(pattern, check_date, event_duration)
+        # CRITICAL FIX: Look ahead much more aggressively for nearby dates
+        # Priority order: Today -> Tomorrow -> Day after -> Then future days
+        priority_dates = []
+        
+        # Add today if it's a business day and there's time left
+        today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+        if today.weekday() < 5 and datetime.now().hour < 20:  # Before 8 PM
+            priority_dates.append(today)
+        
+        # Add tomorrow if it's a business day
+        tomorrow = today + timedelta(days=1)
+        if tomorrow.weekday() < 5:
+            priority_dates.append(tomorrow)
+            
+        # Add day after tomorrow if it's a business day
+        day_after = today + timedelta(days=2)
+        if day_after.weekday() < 5:
+            priority_dates.append(day_after)
+        
+        # Process priority dates first (today, tomorrow, day after)
+        for priority_date in priority_dates:
+            day_suggestions = self._generate_day_suggestions_aggressive(pattern, priority_date, event_duration)
             suggestions.extend(day_suggestions)
             
-            # Stop if we have enough good suggestions
-            if len(suggestions) >= num_suggestions * 2:
+            # If we found good suggestions in nearby days, prefer them
+            if len(suggestions) >= num_suggestions:
                 break
+        
+        # If we still don't have enough, look at future days
+        if len(suggestions) < num_suggestions:
+            for day_offset in range(3, 14):  # Days 3-14
+                check_date = today + timedelta(days=day_offset)
+                if check_date.weekday() < 5:  # Only business days
+                    day_suggestions = self._generate_day_suggestions(pattern, check_date, event_duration)
+                    suggestions.extend(day_suggestions)
+                    
+                    if len(suggestions) >= num_suggestions * 2:
+                        break
         
         # Sort by confidence score and return top suggestions
         suggestions.sort(key=lambda x: x.confidence_score, reverse=True)
@@ -454,17 +483,97 @@ class UserBehaviorAnalyzer:
         return suggestions[:num_suggestions]
     
     def _get_next_business_day(self, preferred_date: Optional[datetime]) -> datetime:
-        """Get next appropriate business day"""
+        """Get next appropriate business day - START FROM TODAY, not tomorrow"""
         if preferred_date:
             base_date = preferred_date
         else:
-            base_date = datetime.now() + timedelta(days=1)
+            # CRITICAL FIX: Start from TODAY, not tomorrow
+            # This allows finding slots later today if available
+            base_date = datetime.now()
         
-        # If it's weekend, move to Monday
+        # If it's weekend, move to Monday (but don't skip weekdays)
         while base_date.weekday() >= 5:  # Saturday = 5, Sunday = 6
             base_date += timedelta(days=1)
             
         return base_date.replace(hour=0, minute=0, second=0, microsecond=0)
+    
+    def _generate_day_suggestions_aggressive(self, pattern: UserPattern, check_date: datetime, event_duration: int) -> List[TimeSlotSuggestion]:
+        """Generate suggestions for nearby dates with more aggressive/lenient conflict checking"""
+        day_suggestions = []
+        
+        # For nearby dates, be less strict about preferred days
+        day_preference_score = 1.0 if check_date.weekday() in pattern.preferred_days else 0.7
+        
+        # Try a wider range of hours for nearby dates
+        candidate_hours = list(range(8, 21))  # 8 AM to 8 PM
+        
+        for hour in candidate_hours:
+            # Skip unreasonable hours for the event duration
+            if hour < 7 or hour > 20 or (hour + (event_duration // 60)) > 22:
+                continue
+                
+            slot_start = check_date.replace(hour=hour, minute=0, second=0, microsecond=0)
+            slot_end = slot_start + timedelta(minutes=event_duration)
+            
+            # CRITICAL FIX: Skip past times if this is today
+            if check_date.date() == datetime.now().date() and slot_start <= datetime.now() + timedelta(hours=1):
+                continue
+            
+            # AGGRESSIVE FIX: Use much more lenient conflict checking for nearby dates
+            conflict_prob = self._estimate_conflict_probability_lenient(pattern.user_id, slot_start, slot_end)
+            
+            # For nearby dates, only skip if there's a REAL conflict (not just buffer conflicts)
+            if conflict_prob > 0.99:  # Only skip if there's an actual overlap
+                continue
+            
+            # Calculate confidence score (boost nearby dates)
+            base_confidence = 0.8 if hour in pattern.preferred_hours else 0.6
+            time_bonus = 0.2 if check_date.date() <= (datetime.now().date() + timedelta(days=2)) else 0.0
+            confidence = min(1.0, base_confidence + time_bonus)
+            
+            # Generate reason
+            days_away = (check_date.date() - datetime.now().date()).days
+            if days_away == 0:
+                date_desc = "today"
+            elif days_away == 1:
+                date_desc = "tomorrow"
+            else:
+                date_desc = f"in {days_away} days"
+            
+            reason = f"Available slot {date_desc} at {slot_start.strftime('%I:%M %p')} - no conflicts detected"
+            
+            suggestion = TimeSlotSuggestion(
+                start_time=slot_start,
+                end_time=slot_end,
+                confidence_score=confidence,
+                reason=reason
+            )
+            
+            day_suggestions.append(suggestion)
+            
+            # Limit suggestions per day
+            if len(day_suggestions) >= 4:
+                break
+        
+        return day_suggestions
+    
+    def _estimate_conflict_probability_lenient(self, user_id: str, start_time: datetime, end_time: datetime) -> float:
+        """Lenient conflict checking - only flag REAL overlaps, not buffer conflicts"""
+        try:
+            # Check for ACTUAL conflicts (overlapping events) without buffer
+            exact_conflicts = self.db.query(Event).filter(
+                Event.user_id == user_id,
+                Event.start_time < end_time,
+                Event.end_time > start_time
+            ).count()
+            
+            if exact_conflicts > 0:
+                return 1.0  # Definite conflict
+            else:
+                return 0.0  # No conflict
+                
+        except Exception:
+            return 0.5  # Unknown, allow it
     
     def _generate_day_suggestions(self, pattern: UserPattern, check_date: datetime, event_duration: int) -> List[TimeSlotSuggestion]:
         """Generate suggestions for a specific day"""
@@ -483,6 +592,10 @@ class UserBehaviorAnalyzer:
                 
             slot_start = check_date.replace(hour=hour, minute=0, second=0, microsecond=0)
             slot_end = slot_start + timedelta(minutes=event_duration)
+            
+            # CRITICAL FIX: Skip past times if this is today
+            if check_date.date() == datetime.now().date() and slot_start <= datetime.now():
+                continue
             
             # Enhanced conflict checking
             conflict_prob = self._estimate_conflict_probability_enhanced(pattern.user_id, slot_start, slot_end)

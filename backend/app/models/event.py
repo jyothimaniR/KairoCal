@@ -1,15 +1,14 @@
 # backend/app/models/event.py
 from sqlalchemy import Column, String, Text, DateTime, Boolean, ForeignKey, Integer, Float
-from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
-from app.models import BaseModel
+from app.models import BaseModel, GUID
 
 class Event(BaseModel):
     """Event model for calendar events"""
     __tablename__ = "events"
     
     # Foreign key to user
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
+    user_id = Column(GUID(), ForeignKey("users.id"), nullable=False, index=True)
     
     # Event details
     title = Column(String(255), nullable=False)

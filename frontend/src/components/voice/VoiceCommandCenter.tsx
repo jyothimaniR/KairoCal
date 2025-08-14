@@ -7,8 +7,13 @@ import {
   ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
 import { useVoice } from '../../hooks/useVoice';
+import { apiService } from '../../services/apiService';
 
-const VoiceCommandCenter: React.FC = () => {
+interface VoiceCommandCenterProps {
+  onEventCreated?: () => void;
+}
+
+const VoiceCommandCenter: React.FC<VoiceCommandCenterProps> = ({ onEventCreated }) => {
   const { 
     isListening, 
     isProcessing, 
@@ -18,12 +23,13 @@ const VoiceCommandCenter: React.FC = () => {
     isSupported,
     startListening, 
     stopListening, 
-    createEvent,
     clearError,
     reset
   } = useVoice();
 
   const [showResults, setShowResults] = useState(false);
+  const [createdEvent, setCreatedEvent] = useState<{ id: string; title: string; description?: string; priority_level?: number; created_via?: string } | null>(null);
+  const [isCreatingEvent, setIsCreatingEvent] = useState(false);
 
   const handleVoiceCommand = async () => {
     if (isListening) {
@@ -42,16 +48,46 @@ const VoiceCommandCenter: React.FC = () => {
   };
 
   const handleCreateEvent = async () => {
-    if (!transcript) return;
+    if (!transcript || !lastResult) return;
     
     try {
-      const eventResult = await createEvent(transcript);
-      console.log('Event created:', eventResult);
-      // You can add a success notification here
-      reset();
-      setShowResults(false);
+      setIsCreatingEvent(true);
+      
+      // Use the voice-specific API endpoint
+      const result = await apiService.createVoiceEvent(transcript, 'frontend-test-user');
+      
+      if (result.success && result.event_id) {
+        // Create a display-friendly event object with safe typing
+        const ed = result.event_data as Record<string, unknown>;
+        const displayEvent = {
+          id: result.event_id,
+          title: typeof ed.title === 'string' ? ed.title : transcript,
+          description:
+            typeof ed.description === 'string'
+              ? ed.description
+              : `Created via voice: ${transcript}`,
+          priority_level: typeof ed.priority_level === 'number' ? ed.priority_level : lastResult.priority,
+          created_via: 'voice' as const
+        };
+        
+        setCreatedEvent(displayEvent);
+        onEventCreated?.();
+        
+        // Reset after successful creation
+        reset();
+        setShowResults(false);
+        
+        // Clear created event after 5 seconds
+        setTimeout(() => setCreatedEvent(null), 5000);
+      } else {
+        console.error('Failed to create event:', result.message || 'Unknown error');
+        alert(`Failed to create event: ${result.message || 'Unknown error'}`);
+      }
     } catch (error) {
       console.error('Failed to create event:', error);
+      alert(`Failed to create event: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsCreatingEvent(false);
     }
   };
 
@@ -157,6 +193,31 @@ const VoiceCommandCenter: React.FC = () => {
         )}
       </AnimatePresence>
 
+      {/* Success Notification */}
+      <AnimatePresence>
+        {createdEvent && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-green-700 font-medium">✅ Event Created Successfully!</p>
+                <p className="text-xs text-green-600 mt-1">"{createdEvent.title}"</p>
+              </div>
+              <button 
+                onClick={() => setCreatedEvent(null)}
+                className="text-green-500 hover:text-green-700 text-sm"
+              >
+                ✕
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Results Display */}
       <AnimatePresence>
         {showResults && transcript && lastResult && (
@@ -208,10 +269,10 @@ const VoiceCommandCenter: React.FC = () => {
               <div className="flex space-x-2 pt-2">
                 <button 
                   onClick={handleCreateEvent}
-                  disabled={isProcessing}
+                  disabled={isCreatingEvent}
                   className="flex-1 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isProcessing ? 'Creating...' : '✅ Create Event'}
+                  {isCreatingEvent ? 'Creating...' : '✅ Create Event'}
                 </button>
                 <button 
                   onClick={handleDismiss}

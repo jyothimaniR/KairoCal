@@ -1,7 +1,10 @@
 # backend/app/api/users.py - Simplified without authentication
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 from typing import List
+import logging
+logger = logging.getLogger(__name__)
 from app.core.database import get_db
 from app.models.user import User
 from app.schemas import UserCreate, UserUpdate, UserResponse
@@ -11,24 +14,62 @@ router = APIRouter(prefix="/api/v1/users", tags=["users"])
 
 @router.post("/", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 def create_user(
-    user_data: UserCreate, 
+    user_data: UserCreate,
     db: Session = Depends(get_db)
 ):
-    """Create a new user (simplified - no auth required for now)"""
-    # Check if user already exists
-    existing_user = db.query(User).filter(User.cognito_sub == user_data.cognito_sub).first()
-    if existing_user:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, 
-            detail="User profile already exists"
-        )
-    
-    # Create new user
-    user = User(**user_data.dict())
-    db.add(user)
-    db.commit()
-    db.refresh(user)
-    return user
+    """Create a new user (simplified - no auth required for now).
+
+    Robust duplicate handling & normalization to avoid 500s from constraint violations.
+    """
+    # Normalize inputs
+    email_normalized = user_data.email.strip().lower()
+    # Quick duplicate pre-checks (best-effort – race still possible, handled by IntegrityError)
+    if db.query(User).filter(User.email == email_normalized).first():
+        raise HTTPException(status_code=400, detail="Email already registered")
+    if db.query(User).filter(User.cognito_sub == user_data.cognito_sub).first():
+        raise HTTPException(status_code=400, detail="Cognito user already registered")
+
+    try:
+        # Use model_dump for Pydantic v2
+        payload = user_data.model_dump()
+        payload["email"] = email_normalized
+        user = User(**payload)
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+        # Ensure timestamps loaded (fallback populate if still None)
+        if not user.created_at or not user.updated_at:
+            from datetime import datetime, timezone
+            now = datetime.now(timezone.utc)
+            if not user.created_at:
+                user.created_at = now
+            if not user.updated_at:
+                user.updated_at = now
+            try:
+                db.add(user)
+                db.commit()
+                db.refresh(user)
+            except Exception:
+                db.rollback()
+        logger.debug("user_post_refresh_timestamps", extra={"created_at": str(user.created_at), "updated_at": str(user.updated_at)})
+        # Coerce preferences to dict if DB driver returned string
+        if isinstance(user.preferences, str):
+            import json
+            try:
+                user.preferences = json.loads(user.preferences) if user.preferences else {}
+            except Exception:
+                user.preferences = {}
+        logger.debug("user_create_success", extra={"id": str(user.id), "email": user.email})
+        return user
+    except IntegrityError as ie:
+        db.rollback()
+        logger.warning("user_create_integrity_error", extra={"error": str(ie), "email": email_normalized})
+        # Generic message (do not leak raw constraint names)
+        raise HTTPException(status_code=400, detail="Duplicate email or cognito_sub")
+    except Exception as e:
+        db.rollback()
+        logger.exception("user_create_unexpected_error")
+        raise HTTPException(status_code=500, detail="Failed to create user")
 
 @router.get("/me", response_model=UserResponse)
 def get_current_user_profile(

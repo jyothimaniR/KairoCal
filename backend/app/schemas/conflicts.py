@@ -59,6 +59,15 @@ class ConflictDetectionResponse(BaseModel):
     buffer_minutes: int = Field(..., ge=0, description="Buffer time considered for this conflict")
     confidence: float = Field(..., ge=0.0, le=1.0, description="Confidence score for conflict detection")
     impact_score: float = Field(..., ge=0.0, le=1.0, description="Impact score of the conflict")
+    
+    # Enhanced BERT reasoning fields
+    priority_analysis: Optional[Dict[str, Any]] = Field(None, description="BERT priority analysis for involved events")
+    reasoning: Optional[List[str]] = Field(None, description="List of reasons why this is a conflict")
+    ai_confidence: Optional[float] = Field(None, ge=0.0, le=1.0, description="AI confidence in conflict severity assessment")
+    
+    class Config:
+        # Include None values in JSON output
+        exclude_none = False
 
 class TimeSlotAlternative(BaseModel):
     """Alternative time slot suggestion"""

@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, validator, ConfigDict
 from typing import Optional, List
 from datetime import datetime
 from uuid import UUID
@@ -68,9 +68,7 @@ class EventResponse(EventBase):
     user_id: UUID
     created_at: datetime
     updated_at: datetime
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class ReminderBase(BaseModel):
     minutes_before: int = Field(..., ge=0)
@@ -83,10 +81,9 @@ class ReminderResponse(ReminderBase):
     id: UUID
     event_id: UUID
     is_sent: bool
-    created_at: datetime
-
-    class Config:
-        from_attributes = True
+    created_at: Optional[datetime]
+    model_config = ConfigDict(from_attributes=True)
 
 class EventWithReminders(EventResponse):
     reminders: List[ReminderResponse] = []
+    model_config = ConfigDict(from_attributes=True)

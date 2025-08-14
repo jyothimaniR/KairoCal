@@ -153,6 +153,8 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
       <form onSubmit={handleEmailAuth} className="space-y-4">
         <div>
           <input
+            id="email"
+            name="email"
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -164,6 +166,8 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
 
         <div className="relative">
           <input
+            id="password"
+            name="password"
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
@@ -186,6 +190,8 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
         {!isLogin && (
           <div>
             <input
+              id="confirmPassword"
+              name="confirmPassword"
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
@@ -201,6 +207,8 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
           <div className="flex items-center justify-between">
             <label className="flex items-center">
               <input
+                id="keepLoggedIn"
+                name="keepLoggedIn"
                 type="checkbox"
                 checked={keepLoggedIn}
                 onChange={(e) => setKeepLoggedIn(e.target.checked)}

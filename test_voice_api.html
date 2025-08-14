@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Voice API Test</title>
+</head>
+<body>
+    <h1>Voice API Test</h1>
+    <button onclick="testVoiceAPI()">Test Voice Create Event</button>
+    <div id="result"></div>
+
+    <script>
+        async function testVoiceAPI() {
+            const payload = {
+                voice_text: "Schedule a meeting with the team tomorrow at 2 PM",
+                user_id: "18209d0d-62c7-48a6-8b49-7fb4e5d3f28e",
+                auto_schedule: true
+            };
+
+            try {
+                console.log('Testing voice API with payload:', payload);
+                
+                const response = await fetch('http://localhost:8000/api/v1/voice/create-event', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(payload),
+                });
+
+                console.log('Response status:', response.status);
+                console.log('Response headers:', response.headers);
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Error response:', errorText);
+                    document.getElementById('result').innerHTML = `<pre>Error ${response.status}: ${errorText}</pre>`;
+                    return;
+                }
+
+                const result = await response.json();
+                console.log('Success result:', result);
+                document.getElementById('result').innerHTML = `<pre>${JSON.stringify(result, null, 2)}</pre>`;
+
+            } catch (error) {
+                console.error('Fetch error:', error);
+                document.getElementById('result').innerHTML = `<pre>Fetch Error: ${error.message}</pre>`;
+            }
+        }
+    </script>
+</body>
+</html>

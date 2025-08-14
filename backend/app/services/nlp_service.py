@@ -26,12 +26,22 @@ class NLPService:
             'just', 'kinda', 'sorta', 'i mean', 'you see'
         ]
         
-        # Time patterns for voice input
+        # Time patterns for voice input - FIXED ORDER AND PATTERNS INCLUDING PERIODS
         self.time_patterns = {
-            r'\b(at\s+)?(\d{1,2})\s*(am|pm|o\'?clock)\b': self._parse_time_12h,
-            r'\b(at\s+)?(\d{1,2}):(\d{2})\s*(am|pm)?\b': self._parse_time_24h,
+            # Match HH:MM a.m./p.m. with periods (most specific)
+            r'\b(at\s+)?(\d{1,2}):(\d{2})\s*(a\.?m\.?|p\.?m\.?)\b': self._parse_time_24h,
+            # Match HH:MM am/pm without periods
+            r'\b(at\s+)?(\d{1,2}):(\d{2})\s*(am|pm)\b': self._parse_time_24h,
+            # Match H a.m./p.m. with periods 
+            r'\b(at\s+)?(\d{1,2})\s*(a\.?m\.?|p\.?m\.?)\b': self._parse_time_12h,
+            # Match H am/pm without periods
+            r'\b(at\s+)?(\d{1,2})\s*(am|pm)\b': self._parse_time_12h,
+            # Special times
+            r'\b(at\s+)?(noon|midnight)\b': self._parse_special_time,
+            # Relative times
             r'\b(at\s+)?(morning|afternoon|evening|night)\b': self._parse_relative_time,
-            r'\b(at\s+)?(noon|midnight)\b': self._parse_special_time
+            # 24-hour format without am/pm
+            r'\b(at\s+)?(\d{1,2}):(\d{2})\b': self._parse_time_24h_no_period
         }
         
         # Date patterns for voice input
@@ -199,21 +209,81 @@ class NLPService:
     
     def _extract_title(self, text: str) -> str:
         """Extract event title from voice text"""
-        # Look for explicit title patterns
-        title_patterns = [
-            r'schedule\s+(a\s+)?(.+?)(?:\s+at|\s+on|\s+for|\s+tomorrow|$)',
-            r'set up\s+(a\s+)?(.+?)(?:\s+at|\s+on|\s+for|\s+tomorrow|$)',
-            r'book\s+(a\s+)?(.+?)(?:\s+at|\s+on|\s+for|\s+tomorrow|$)',
-            r'remind me\s+(?:to\s+)?(.+?)(?:\s+at|\s+on|\s+for|\s+tomorrow|$)',
-            r'(.+?)(?:\s+meeting|\s+appointment|\s+call)(?:\s+at|\s+on|\s+for|\s+tomorrow|$)',
+        # First, try to identify and extract the main event content
+        # Remove time/date references to get clean event title
+        
+        # Remove common time/date patterns from the text to isolate the title
+        clean_text = text.lower().strip()
+        
+        # Remove ALL temporal references and scheduling words comprehensively
+        temporal_stopwords = [
+            # Basic time references
+            r'\b(tomorrow|today|yesterday|tonight|tonite)\b',
+            r'\b(now|later|soon|asap|immediately)\b',
+            
+            # Day references
+            r'\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b',
+            r'\b(mon|tue|wed|thu|fri|sat|sun)\b',
+            r'\b(weekday|weekend)\b',
+            
+            # Week/Month references  
+            r'\b(this|next|last|coming|upcoming)\s+(week|month|year|weekend|morning|afternoon|evening|night)\b',
+            r'\b(this|next|last|coming|upcoming)\s+(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b',
+            
+            # Time of day
+            r'\b(morning|afternoon|evening|night|noon|midnight|dawn|dusk)\b',
+            r'\b(early|late)\s+(morning|afternoon|evening|night)\b',
+            
+            # Duration and timing
+            r'\b(in\s+\d+\s+(minutes?|hours?|days?|weeks?|months?))\b',
+            r'\b(after\s+\d+\s+(minutes?|hours?|days?))\b',
+            r'\b(within\s+\d+\s+(minutes?|hours?|days?))\b',
+            
+            # Specific time patterns
+            r'\b(at|on|for|by|until|before|after)\s+\d{1,2}(:\d{2})?\s*(am|pm|a\.?m\.?|p\.?m\.?)\b',
+            r'\b(at|on|for|by|until|before|after)\s+(morning|afternoon|evening|night|noon|midnight)\b',
+            
+            # Date formats
+            r'\b\d{1,2}/\d{1,2}(/\d{2,4})?\b',
+            r'\b\d{4}-\d{2}-\d{2}\b',
+            r'\b\d{1,2}(st|nd|rd|th)?\s+(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\b',
+            r'\b(january|february|march|april|may|june|july|august|september|october|november|december)\s+\d{1,2}(st|nd|rd|th)?\b',
+            
+            # Relative timing
+            r'\b(first|second|third|fourth|last)\s+(week|day|hour|minute)\b',
+            r'\b(beginning|middle|end)\s+of\s+(week|month|year|day)\b',
+            r'\b(start|end)\s+of\s+(week|month|year|day)\b',
+            
+            # Frequency/repetition (when used for scheduling)
+            r'\b(daily|weekly|monthly|yearly|annually)\b',
+            r'\b(every|each)\s+(day|week|month|year|morning|afternoon|evening)\b',
+            
+            # Scheduling context words
+            r'\b(scheduled|planned|set|arranged|booked)\s+(for|on|at)\b',
+            r'\b(due|deadline|expires?|starts?|begins?|ends?)\s+(on|at|by|in)\b'
         ]
         
-        for pattern in title_patterns:
-            match = re.search(pattern, text, re.IGNORECASE)
-            if match:
-                title = match.group(1) if len(match.groups()) == 1 else match.group(2)
-                if title:
-                    return title.strip().title()
+        for pattern in temporal_stopwords:
+            before = clean_text
+            clean_text = re.sub(pattern, '', clean_text, flags=re.IGNORECASE).strip()
+            if before != clean_text:
+                logger.debug(f"🧹 Temporal removal: '{before}' -> '{clean_text}' (pattern: {pattern[:20]}...)")
+        
+        # Remove common scheduling verbs if they're at the beginning
+        scheduling_verbs = [
+            r'^\s*(schedule|set up|book|remind me to|plan|arrange)\s+(a\s+|an\s+)?',
+        ]
+        
+        for pattern in scheduling_verbs:
+            clean_text = re.sub(pattern, '', clean_text, flags=re.IGNORECASE).strip()
+        
+        # Clean up extra spaces
+        clean_text = re.sub(r'\s+', ' ', clean_text).strip()
+        
+        # If we have a good clean title, use it
+        if clean_text and len(clean_text) > 2:
+            # Capitalize properly and return
+            return clean_text.title()
         
         # Fallback: Extract event type
         event_type = self._extract_event_type(text)
@@ -296,27 +366,43 @@ class NLPService:
         return None
     
     def _parse_time_12h(self, match) -> datetime:
-        """Parse 12-hour format time (e.g., '3pm', '11am')"""
+        """Parse 12-hour format time (e.g., '3pm', '11am', '3 p.m.', '11 a.m.')"""
         hour = int(match.group(2))
         period = match.group(3).lower()
         
-        if period in ['pm'] and hour != 12:
+        # Normalize period - remove dots and spaces
+        period = period.replace('.', '').replace(' ', '')
+        
+        # Convert to 24-hour format - FIXED LOGIC
+        if 'pm' in period and hour != 12:
             hour += 12
-        elif period in ['am'] and hour == 12:
+        elif 'am' in period and hour == 12:
             hour = 0
         
         return datetime.now().replace(hour=hour, minute=0, second=0, microsecond=0)
     
     def _parse_time_24h(self, match) -> datetime:
-        """Parse 24-hour format time (e.g., '15:30', '9:00am')"""
+        """Parse 24-hour format time with am/pm (e.g., '2:30pm', '9:00am', '2:30 p.m.')"""
         hour = int(match.group(2))
         minute = int(match.group(3))
-        period = match.group(4)
+        period = match.group(4).lower() if match.group(4) else None
         
-        if period and period.lower() == 'pm' and hour != 12:
-            hour += 12
-        elif period and period.lower() == 'am' and hour == 12:
-            hour = 0
+        # Convert to 24-hour format if period is specified
+        if period:
+            # Normalize period - remove dots and spaces
+            period = period.replace('.', '').replace(' ', '')
+            
+            if 'pm' in period and hour != 12:
+                hour += 12
+            elif 'am' in period and hour == 12:
+                hour = 0
+        
+        return datetime.now().replace(hour=hour, minute=minute, second=0, microsecond=0)
+    
+    def _parse_time_24h_no_period(self, match) -> datetime:
+        """Parse 24-hour format time without am/pm (e.g., '15:30', '09:00')"""
+        hour = int(match.group(2))
+        minute = int(match.group(3))
         
         return datetime.now().replace(hour=hour, minute=minute, second=0, microsecond=0)
     

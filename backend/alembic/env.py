@@ -1,7 +1,6 @@
 from logging.config import fileConfig
 
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
+from sqlalchemy import engine_from_config, pool
 
 from alembic import context
 
@@ -65,11 +64,12 @@ def run_migrations_online() -> None:
     and associate a connection with the context.
 
     """
-    connectable = engine_from_config(
-        config.get_section(config.config_ini_section, {}),
-        prefix="sqlalchemy.",
-        poolclass=pool.NullPool,
-    )
+    # Allow runtime override via DATABASE_URL env var (PostgreSQL only)
+    section = config.get_section(config.config_ini_section, {})
+    runtime_url = os.getenv("DATABASE_URL")
+    if runtime_url:
+        section["sqlalchemy.url"] = runtime_url
+    connectable = engine_from_config(section, prefix="sqlalchemy.", poolclass=pool.NullPool)
 
     with connectable.connect() as connection:
         context.configure(

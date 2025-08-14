@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, ConfigDict
 from typing import Optional, Dict, Any
 from datetime import datetime
 from uuid import UUID
@@ -22,9 +22,9 @@ class UserResponse(UserBase):
     is_active: bool
     created_at: datetime
     updated_at: datetime
-
-    class Config:
-        from_attributes = True
+    # Pydantic v2 config
+    model_config = ConfigDict(from_attributes=True)
 
 class UserInDB(UserResponse):
-    pass
+    """Internal representation (identical currently)."""
+    model_config = ConfigDict(from_attributes=True)

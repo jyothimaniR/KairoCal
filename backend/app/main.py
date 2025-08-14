@@ -1,8 +1,10 @@
 # backend/app/main.py
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, Request, Response
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
-from app.core.database import get_db, engine
+from app.core.database import get_db, get_engine, run_migrations_if_configured, migration_status, init_engine
+from app.core.metrics import record_http_request, render_prometheus
 from app.config import get_settings
 
 # Import existing routers
@@ -13,16 +15,29 @@ try:
 except ImportError:
     HAS_REMINDERS = False
 
-try:
-    from app.api import nlp
-    HAS_NLP = True
-except ImportError:
+import os as _os  # local alias to avoid later shadowing
+
+# Lightweight mode flags (used by OpenAPI validation script)
+_disable_nlp = _os.getenv("DISABLE_NLP", "false").lower() == "true"
+_disable_analytics = _os.getenv("DISABLE_ANALYTICS", "false").lower() == "true"
+_disable_conflicts = _os.getenv("DISABLE_CONFLICTS", "false").lower() == "true"
+
+if not _disable_nlp:
+    try:
+        from app.api import nlp
+        HAS_NLP = True
+    except ImportError:
+        HAS_NLP = False
+else:
     HAS_NLP = False
 
-try:
-    from app.api.analytics import router as analytics_router
-    HAS_ANALYTICS = True
-except ImportError:
+if not _disable_analytics:
+    try:
+        from app.api.analytics import router as analytics_router
+        HAS_ANALYTICS = True
+    except ImportError:
+        HAS_ANALYTICS = False
+else:
     HAS_ANALYTICS = False
 
 try:
@@ -78,11 +93,113 @@ if HAS_NLP:
 if HAS_ANALYTICS:
     app.include_router(analytics_router)
 
-if HAS_CONFLICTS:
+if HAS_CONFLICTS and not _disable_conflicts:
     app.include_router(conflicts_router)
 
 if HAS_VOICE:
     app.include_router(voice_router)
+
+import os, logging, time, uuid, contextvars, traceback
+logger = logging.getLogger(__name__)
+_correlation_id_ctx: contextvars.ContextVar[str] = contextvars.ContextVar("correlation_id", default="")
+
+_READINESS_CACHE = {"ready": False, "reason": "initializing"}
+
+@app.on_event("startup")
+def startup_db():
+    try:
+        init_engine()
+        run_migrations_if_configured()
+        ms = migration_status()
+        require_sync = os.getenv("READINESS_REQUIRE_MIGRATION_SYNC", "true").lower() == "true"
+        if require_sync and ms.get("status") not in ("ok",):
+            _READINESS_CACHE.update({"ready": False, "reason": f"migration_status={ms.get('status')}", "migration": ms})
+        else:
+            _READINESS_CACHE.update({"ready": True, "reason": "ok", "migration": ms})
+        logger.info("DB readiness state %s", _READINESS_CACHE)
+    except Exception as e:
+        _READINESS_CACHE.update({"ready": False, "reason": f"error:{e}"})
+        logger.exception("Startup DB init failed")
+
+# Request timing middleware (placed after startup for simplicity)
+@app.middleware("http")
+async def timing_middleware(request: Request, call_next):
+    cid = request.headers.get("X-Request-Id") or str(uuid.uuid4())
+    _correlation_id_ctx.set(cid)
+    start = time.time()
+    slow_req_threshold = int(os.getenv("SLOW_REQUEST_THRESHOLD_MS", "500"))
+    response: Response | None = None
+    try:
+        response = await call_next(request)
+        return response
+    finally:
+        try:
+            duration_ms = (time.time() - start) * 1000.0
+            path_template = getattr(getattr(request.scope.get('route'), 'path', None), 'strip', lambda: request.url.path)()
+            status_code = getattr(response, 'status_code', 500)
+            record_http_request(request.method, path_template, status_code, duration_ms, slow_req_threshold)
+            if duration_ms >= slow_req_threshold:
+                logger.warning("SLOW_REQUEST %s %.1fms %s", request.method, duration_ms, path_template)
+            if response is not None:
+                try:
+                    response.headers["X-Request-Id"] = cid
+                except Exception:
+                    pass
+        except Exception as m_err:  # Never let metrics path kill request
+            logger.debug("timing_middleware_finalize_error %s", m_err)
+
+@app.middleware("http")
+async def unified_error_wrapper(request: Request, call_next):
+    try:
+        return await call_next(request)
+    except HTTPException as he:
+        logger.warning("http_exception", extra={
+            "status": he.status_code,
+            "detail": he.detail,
+            "path": request.url.path,
+            "cid": _correlation_id_ctx.get()
+        })
+        return JSONResponse(
+            status_code=he.status_code,
+            content={
+                "error": {
+                    "code": he.status_code,
+                    "message": he.detail,
+                    "correlation_id": _correlation_id_ctx.get(),
+                    "path": request.url.path
+                }
+            },
+        )
+    except Exception as e:
+        tb_tail = "".join(traceback.format_exception(type(e), e, e.__traceback__))[-1500:]
+        logger.error("unhandled_exception", extra={
+            "exc_type": type(e).__name__,
+            "error": str(e),
+            "path": request.url.path,
+            "cid": _correlation_id_ctx.get(),
+            "trace_tail": tb_tail
+        })
+        debug = bool(os.getenv("DEBUG", str(settings.app_debug)).lower() == "true")
+        msg = "Internal Server Error"
+        if debug:
+            msg = f"{type(e).__name__}: {e}"
+        return JSONResponse(
+            status_code=500,
+            content={
+                "error": {
+                    "code": 500,
+                    "message": msg,
+                    "correlation_id": _correlation_id_ctx.get(),
+                    "path": request.url.path
+                }
+            },
+        )
+
+@app.get("/ready")
+def readiness_probe():
+    if _READINESS_CACHE.get("ready"):
+        return {"ready": True, "migration": _READINESS_CACHE.get("migration")}
+    raise HTTPException(status_code=503, detail=_READINESS_CACHE)
 
 @app.get("/")
 def read_root():
@@ -179,58 +296,35 @@ def api_status():
         "service": "KairoCal Backend with BERT",
         "status": "operational",
         "features": features,
-        "endpoints": endpoints
+    "endpoints": endpoints,
+    "database_url": str(settings.database_url)
     }
 
 @app.get("/api/v1/database/status")
 def database_status(db: Session = Depends(get_db)):
-    """Check database connectivity and table status"""
     try:
-        from sqlalchemy import text
-        result = db.execute(text("SELECT 1"))
-        result.fetchone()
-        
-        from sqlalchemy import inspect
-        inspector = inspect(engine)
+        from sqlalchemy import text, inspect
+        db.execute(text("SELECT 1"))
+        eng = get_engine()
+        inspector = inspect(eng)
         tables = inspector.get_table_names()
-        
-        services = ["basic_api"]
-        if HAS_NLP:
-            services.append("bert_priority_classification")
-        if HAS_VOICE:
-            services.append("voice_to_text_api")
-        if HAS_CONFLICTS:
-            services.append("conflict_detection")
-        if HAS_ANALYTICS:
-            services.append("user_behavior_analytics")
-        
+        ms = migration_status()
         return {
             "database_status": "connected",
             "tables_created": len(tables),
             "tables": tables,
-            "models_registered": ["users", "events", "reminders"],
-            "services_operational": services
+            "migration": ms,
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
-@app.post("/api/v1/database/create-tables")
-def create_tables_endpoint():
-    """Create database tables (development only)"""
-    try:
-        from app.core.database import Base
-        Base.metadata.create_all(bind=engine)
-        
-        from sqlalchemy import inspect
-        inspector = inspect(engine)
-        tables = inspector.get_table_names()
-        
-        return {
-            "message": "Tables created successfully",
-            "tables_created": tables
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Table creation failed: {str(e)}")
+@app.get("/api/v1/database/migration-status")
+def migration_status_endpoint():
+    return migration_status()
+
+@app.get("/metrics")
+def metrics_endpoint():
+    return Response(render_prometheus(), media_type="text/plain; version=0.0.4")
 
 # Demo endpoint to showcase BERT capabilities (only if NLP is available)
 if HAS_NLP:

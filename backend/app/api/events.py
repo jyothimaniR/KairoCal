@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import datetime
 import logging
-import asyncio
+import os as _os
 
 from app.core.database import get_db
 from app.models.event import Event
@@ -12,11 +12,27 @@ from app.models.user import User
 from app.schemas import EventCreate, EventUpdate, EventResponse, EventWithReminders
 from uuid import UUID
 
-# Import BERT integration components
-from app.nlp.nlp_service import NLPService
+# Feature gating (used for lightweight OpenAPI generation without heavy deps)
+_disable_nlp_events = _os.getenv("DISABLE_NLP", "false").lower() == "true"
+_disable_ws = _os.getenv("DISABLE_WEBSOCKETS", "false").lower() == "true"
 
-# Import WebSocket server for real-time broadcasting
-from app.websocket.ultimate_socket_server import get_socket_server
+if not _disable_nlp_events:
+    try:  # Try to import NLP service
+        from app.nlp.nlp_service import NLPService
+        _NLP_AVAILABLE = True
+    except Exception:
+        _NLP_AVAILABLE = False
+else:
+    _NLP_AVAILABLE = False
+
+if not _disable_ws:
+    try:
+        from app.websocket.ultimate_socket_server import get_socket_server
+        _WS_AVAILABLE = True
+    except Exception:
+        _WS_AVAILABLE = False
+else:
+    _WS_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1/events", tags=["events"])
@@ -30,6 +46,7 @@ def get_user_from_cognito(cognito_sub: str, db: Session) -> User:
             detail="User profile not found. Please create your profile first using POST /api/v1/users/"
         )
     return user
+
 
 @router.post("/", response_model=EventResponse, status_code=status.HTTP_201_CREATED)
 async def create_event(
@@ -53,13 +70,14 @@ async def create_event(
     """
     user = get_user_from_cognito(cognito_sub, db)
     
-    # Convert to dict for processing
-    event_dict = event_data.dict()
+    # Convert to dict for processing, excluding unset/None so DB defaults apply
+    # This prevents NOT NULL violations for analytics columns when values are omitted
+    event_dict = event_data.model_dump(exclude_unset=True, exclude_none=True)
     
     # Auto-classify priority if requested and not already specified
     priority_classification_data = {}
     
-    if auto_classify_priority and (not event_data.priority_level or event_data.priority_level == 3):
+    if auto_classify_priority and _NLP_AVAILABLE and (not event_data.priority_level or event_data.priority_level == 3):
         try:
             logger.info(f"🤖 Auto-classifying priority for event: {event_data.title}")
             
@@ -103,47 +121,77 @@ async def create_event(
             'priority_confidence': event_data.priority_confidence or 0.0,
             'classification_method': event_data.classification_method or 'manual'
         })
+
+    # Defensive: ensure analytics / non-nullable defaults explicitly provided
+    analytics_defaults = {
+        'meeting_outcome': 'neutral',
+        'effectiveness_rating': 3,
+        'energy_level': 3,
+        'created_via': event_dict.get('created_via') or 'manual'
+    }
+    for k, v in analytics_defaults.items():
+        event_dict.setdefault(k, v)
+
+    # Explicit is_all_day default if omitted
+    event_dict.setdefault('is_all_day', False)
     
     # Create event associated with the user
-    event = Event(**event_dict, user_id=user.id)
-    db.add(event)
-    db.commit()
-    db.refresh(event)
+    try:
+        event = Event(**event_dict, user_id=user.id)
+        db.add(event)
+        db.commit()
+        db.refresh(event)
+        if not event.created_at or not event.updated_at:
+            from datetime import datetime, timezone
+            now = datetime.now(timezone.utc)
+            if not event.created_at:
+                event.created_at = now
+            if not event.updated_at:
+                event.updated_at = now
+            try:
+                db.add(event)
+                db.commit()
+                db.refresh(event)
+            except Exception:
+                db.rollback()
+    except Exception as e:
+        db.rollback()
+        import traceback, io
+        buf = io.StringIO()
+        traceback.print_exc(file=buf)
+        tb_snippet = buf.getvalue()[-1200:]
+        logger.error(f"❌ Event create failure root cause: {type(e).__name__}: {e}")
+        # Include tail of traceback so client sees the actual DB or validation error
+        raise HTTPException(status_code=500, detail=f"{type(e).__name__}: {e}\nTRACEBACK_TAIL:\n{tb_snippet}")
     
     logger.info(f"📅 Event created: {event.title} (Priority: {event.priority_level})")
     
-    # Real-time WebSocket Broadcasting
-    try:
-        socket_server = await get_socket_server()
-        
-        # Prepare event data for broadcasting
-        event_broadcast_data = {
-            'id': event.id,
-            'title': event.title,
-            'description': event.description,
-            'start_time': event.start_time.isoformat() if event.start_time else None,
-            'end_time': event.end_time.isoformat() if event.end_time else None,
-            'location': event.location,
-            'priority_level': event.priority_level,
-            'priority_confidence': event.priority_confidence,
-            'classification_method': event.classification_method,
-            'user_id': user.id,
-            'created_at': event.created_at.isoformat() if event.created_at else None,
-            'event_type': 'event_creation'
-        }
-        
-        # Broadcast event creation to user's connected devices
-        await socket_server.broadcast_event_created(event_broadcast_data)
-        
-        # If priority was classified using BERT/AI, broadcast priority classification
-        if priority_classification_data:
-            await socket_server.broadcast_priority_classified(user.id, priority_classification_data)
-        
-        logger.info(f"🔔 Real-time notifications sent for event: {event.title}")
-        
-    except Exception as e:
-        logger.error(f"❌ WebSocket broadcasting failed: {e}")
-        # Continue anyway - event was created successfully
+    # Real-time WebSocket Broadcasting (optional during lightweight mode)
+    if _WS_AVAILABLE:
+        try:
+            socket_server = await get_socket_server()
+            # Prepare event data for broadcasting
+            event_broadcast_data = {
+                'id': event.id,
+                'title': event.title,
+                'description': event.description,
+                'start_time': event.start_time.isoformat() if event.start_time else None,
+                'end_time': event.end_time.isoformat() if event.end_time else None,
+                'location': event.location,
+                'priority_level': event.priority_level,
+                'priority_confidence': event.priority_confidence,
+                'classification_method': event.classification_method,
+                'user_id': user.id,
+                'created_at': event.created_at.isoformat() if event.created_at else None,
+                'event_type': 'event_creation'
+            }
+            await socket_server.broadcast_event_created(event_broadcast_data)
+            if priority_classification_data:
+                await socket_server.broadcast_priority_classified(user.id, priority_classification_data)
+            logger.info(f"🔔 Real-time notifications sent for event: {event.title}")
+        except Exception as e:
+            logger.error(f"❌ WebSocket broadcasting failed: {e}")
+            # Continue anyway - event was created successfully
     
     return event
 

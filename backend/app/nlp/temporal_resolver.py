@@ -122,21 +122,44 @@ class TemporalResolver:
         if time_text in self.period_defaults:
             return self.period_defaults[time_text]
         
-        # 12-hour format with AM/PM
-        twelve_hour_match = re.match(r"(\d{1,2}):?(\d{2})?\s*(am|pm)", time_text)
+        # 12-hour format with AM/PM - FIXED VERSION
+        twelve_hour_match = re.match(r"(\d{1,2}):?(\d{2})?\s*(am|pm|a\.?m\.?|p\.?m\.?)", time_text)
         if twelve_hour_match:
             hour, minute, period = twelve_hour_match.groups()
             hour = int(hour)
             minute = int(minute) if minute else 0
             
-            # Convert to 24-hour format
-            if period == "pm" and hour != 12:
+            # Normalize period
+            period = period.lower().replace('.', '')
+            
+            # Convert to 24-hour format - CRITICAL FIX
+            if 'pm' in period and hour != 12:
                 hour += 12
-            elif period == "am" and hour == 12:
+            elif 'am' in period and hour == 12:
                 hour = 0
             
             try:
                 return time(hour, minute)
+            except ValueError:
+                return None
+        
+        # Just number followed by pm/am (like "2pm", "2 pm")  
+        simple_hour_match = re.match(r"(\d{1,2})\s*(am|pm|a\.?m\.?|p\.?m\.?)", time_text)
+        if simple_hour_match:
+            hour, period = simple_hour_match.groups()
+            hour = int(hour)
+            
+            # Normalize period
+            period = period.lower().replace('.', '')
+            
+            # Convert to 24-hour format - CRITICAL FIX
+            if 'pm' in period and hour != 12:
+                hour += 12
+            elif 'am' in period and hour == 12:
+                hour = 0
+            
+            try:
+                return time(hour, 0)  # Assume :00 minutes
             except ValueError:
                 return None
         

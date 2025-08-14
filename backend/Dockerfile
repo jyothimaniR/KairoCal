@@ -8,11 +8,15 @@ RUN apt-get update && apt-get install -y \
     postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements
+# Run transformers in offline mode and reduce noisy warnings
+ENV TRANSFORMERS_OFFLINE=1 \
+    HF_HUB_DISABLE_TELEMETRY=1 \
+    TOKENIZERS_PARALLELISM=false
+
 COPY requirements/ ./requirements/
 
-# Install Python dependencies
-RUN pip install --no-cache-dir --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org -r requirements/minimal.txt
+# Unified image: install full development (runtime + ML) dependencies for complete API (NLP, analytics, conflicts, websocket)
+RUN pip install --no-cache-dir -r requirements/dev.txt
 
 # Copy application code
 COPY . .

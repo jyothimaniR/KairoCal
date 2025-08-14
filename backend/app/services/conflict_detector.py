@@ -11,10 +11,10 @@ import logging
 from dataclasses import dataclass
 import json
 
-# Import the new BERT classifier
+# Import the BERT model loader (working system)
 try:
-    from app.nlp.bert_priority_classifier import AdvancedEventPriorityClassifier
-    BERT_AVAILABLE = True
+    from app.nlp.model_loader import load_bert_model, get_global_bert_model
+    BERT_AVAILABLE = True  # RE-ENABLED AFTER TESTING
 except ImportError:
     BERT_AVAILABLE = False
     
@@ -69,12 +69,12 @@ class SmartConflictDetector:
     def __init__(self, db_session=None, bert_model_path: str = None):
         self.db = db_session
         
-        # Initialize BERT priority classifier
+        # Initialize BERT priority classifier using the working model loader system
         if BERT_AVAILABLE:
             try:
-                self.bert_classifier = AdvancedEventPriorityClassifier(bert_model_path)
+                self.bert_classifier = get_global_bert_model()
                 self.use_bert = True
-                logger.info("BERT Priority Classifier initialized successfully")
+                logger.info("BERT Priority Classifier initialized successfully using global model")
             except Exception as e:
                 logger.warning(f"Failed to initialize BERT classifier: {e}")
                 self.bert_classifier = None

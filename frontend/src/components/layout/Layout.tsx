@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   HomeIcon,
   CalendarIcon,
@@ -10,30 +10,22 @@ import {
   Cog6ToothIcon,
   BellIcon,
 } from '@heroicons/react/24/outline';
+import { useVoice } from '../../hooks/useVoice';
+import { useSystemHealth } from '../../hooks/useSystemHealth';
 
 interface LayoutProps {
   children: React.ReactNode;
 }
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
-  const [voiceApiHealth, setVoiceApiHealth] = useState(false);
+  // Use unified system health hook
+  const { isVoiceHealthy, isBertHealthy } = useSystemHealth();
   const location = useLocation();
+  const navigate = useNavigate();
+  const { isListening, startListening, stopListening } = useVoice();
+  const [headerQuery, setHeaderQuery] = useState('');
 
   console.log('🏗️ Layout component rendering with location:', location.pathname);
-
-  // Check voice API health on component mount
-  useEffect(() => {
-    checkVoiceApiHealth();
-  }, []);
-
-  const checkVoiceApiHealth = async () => {
-    try {
-      const response = await fetch('http://127.0.0.1:8001/health');
-      setVoiceApiHealth(response.ok);
-    } catch (error) {
-      setVoiceApiHealth(false);
-    }
-  };
 
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
@@ -84,13 +76,13 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         <div className="px-6 py-4 border-t border-gray-200">
           <div className="text-xs font-medium text-gray-900 mb-3">🤖 AI Status</div>
           <div className="space-y-2 text-xs">
-            <div className={`flex items-center ${voiceApiHealth ? 'text-green-600' : 'text-red-600'}`}>
-              <div className={`w-2 h-2 rounded-full mr-2 ${voiceApiHealth ? 'bg-green-500' : 'bg-red-500'}`}></div>
-              BERT {voiceApiHealth ? 'Online' : 'Offline'}
+            <div className={`flex items-center ${isBertHealthy ? 'text-green-600' : 'text-red-600'}`}>
+              <div className={`w-2 h-2 rounded-full mr-2 ${isBertHealthy ? 'bg-green-500' : 'bg-red-500'}`}></div>
+              BERT {isBertHealthy ? 'Online' : 'Offline'}
             </div>
-            <div className={`flex items-center ${voiceApiHealth ? 'text-green-600' : 'text-red-600'}`}>
-              <div className={`w-2 h-2 rounded-full mr-2 ${voiceApiHealth ? 'bg-green-500' : 'bg-red-500'}`}></div>
-              Voice {voiceApiHealth ? 'Ready' : 'Unavailable'}
+            <div className={`flex items-center ${isVoiceHealthy ? 'text-green-600' : 'text-red-600'}`}>
+              <div className={`w-2 h-2 rounded-full mr-2 ${isVoiceHealthy ? 'bg-green-500' : 'bg-red-500'}`}></div>
+              Voice {isVoiceHealthy ? 'Ready' : 'Unavailable'}
             </div>
             <div className="flex items-center text-blue-600">
               <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
@@ -113,12 +105,41 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               <div className="relative">
                 <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <input
+                  id="global-search"
+                  name="globalSearch"
                   type="text"
-                  placeholder="What's on your mind?"
+                  value={headerQuery}
+                  onChange={(e) => setHeaderQuery(e.target.value)}
+                  placeholder="Search for events or tasks"
+                  autoComplete="off"
+                  autoCorrect="off"
+                  autoCapitalize="off"
+                  spellCheck={false}
+                  inputMode="search"
                   className="w-full pl-10 pr-10 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      navigate('/search', { state: { q: headerQuery } });
+                    }
+                  }}
                 />
-                <button className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                  <MicrophoneIcon className="h-4 w-4 text-purple-500" />
+                <button
+                  type="button"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2"
+                  aria-label={isListening ? 'Stop voice input' : 'Start voice input'}
+                  title={isListening ? 'Stop voice input' : 'Start voice input'}
+                  onClick={async () => {
+                    if (isListening) { stopListening(); return; }
+                    try {
+                      const res = await startListening();
+                      if (res?.transcript) {
+                        setHeaderQuery(res.transcript);
+                        navigate('/search', { state: { q: res.transcript } });
+                      }
+                    } catch { /* ignore */ }
+                  }}
+                >
+                  <MicrophoneIcon className={`h-4 w-4 ${isListening ? 'text-red-500' : 'text-purple-500'}`} />
                 </button>
               </div>
             </div>
@@ -126,14 +147,19 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             {/* Right Side */}
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-3 text-sm">
-                <button className="p-2 hover:bg-gray-100 rounded-lg relative">
+                <button
+                  type="button"
+                  className="p-2 hover:bg-gray-100 rounded-lg relative"
+                  aria-label="Notifications"
+                  title="Notifications"
+                >
                   <BellIcon className="h-5 w-5 text-gray-600" />
                   <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full text-xs text-white flex items-center justify-center"></span>
                 </button>
-                <div className={`flex items-center space-x-2 px-3 py-1 rounded-lg ${voiceApiHealth ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
+                <div className={`flex items-center space-x-2 px-3 py-1 rounded-lg ${isVoiceHealthy ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
                   <MicrophoneIcon className="h-4 w-4" />
                   <span className="text-xs font-medium">
-                    {voiceApiHealth ? 'Voice Ready' : 'Voice Offline'}
+                    {isVoiceHealthy ? 'Voice Ready' : 'Voice Offline'}
                   </span>
                 </div>
                 <span className="text-purple-600 font-medium">📊 87%</span>

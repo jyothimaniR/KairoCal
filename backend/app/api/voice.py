@@ -6,17 +6,19 @@ Integrates with BERT priority classification system and real-time WebSocket broa
 import logging
 import json
 from datetime import datetime, timedelta
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional, List, Union
 from fastapi import APIRouter, HTTPException, Depends, status
 from pydantic import BaseModel, Field, validator
 import re
 import asyncio
+import uuid
 
 from ..core.database import get_db
 from ..services.nlp_service import NLPService
 from app.models.event import Event
 from app.models.user import User
 from sqlalchemy.orm import Session
+from ..nlp.temporal_resolver import TemporalResolver
 
 # Import WebSocket server for real-time broadcasting
 from ..websocket.ultimate_socket_server import get_socket_server
@@ -32,7 +34,7 @@ voice_router = APIRouter(prefix="/api/v1/voice", tags=["voice"])
 class VoiceTranscribeRequest(BaseModel):
     """Voice transcription request model"""
     text: str = Field(..., min_length=1, max_length=5000, description="Raw voice input text")
-    user_id: Optional[int] = Field(None, description="User ID for personalized processing")
+    user_id: Optional[Union[str, uuid.UUID]] = Field(None, description="User ID (UUID) for personalized processing")
     language: str = Field("en", description="Language code (default: en)")
     confidence_threshold: float = Field(0.5, ge=0.0, le=1.0, description="Minimum confidence threshold")
     
@@ -54,7 +56,7 @@ class VoiceTranscribeResponse(BaseModel):
 class VoiceCreateEventRequest(BaseModel):
     """Voice event creation request model"""
     voice_text: str = Field(..., min_length=1, max_length=5000, description="Voice input describing the event")
-    user_id: int = Field(..., description="User ID for event creation")
+    user_id: Union[str, uuid.UUID] = Field(..., description="User ID (UUID) for event creation")
     auto_schedule: bool = Field(True, description="Automatically schedule if time is detected")
     priority_override: Optional[int] = Field(None, ge=1, le=5, description="Manual priority override (1-5)")
     
@@ -67,7 +69,7 @@ class VoiceCreateEventRequest(BaseModel):
 class VoiceEventResponse(BaseModel):
     """Voice event creation response model"""
     success: bool
-    event_id: Optional[int]
+    event_id: Optional[Union[str, uuid.UUID]]
     event_data: Dict[str, Any]
     nlp_analysis: Dict[str, Any]
     bert_classification: Dict[str, Any]
@@ -242,11 +244,114 @@ async def create_event_from_voice(
         # Step 2: NLP Processing with voice-specific enhancements
         nlp_service = NLPService()
         nlp_result = await nlp_service.process_voice_input(cleaned_text)
+
+        # Step 4: Resolve temporal info (date/time) with TemporalResolver for tz-aware, AM/PM-correct times
+        # Extract simple date/time candidates from cleaned_text and normalize AM/PM variants
+        def _extract_date_token(text: str) -> Optional[str]:
+            import re as _re
+            patterns = [
+                r"\b(today|tomorrow|yesterday|next week|next month|monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b",
+                r"\b\d{4}-\d{2}-\d{2}\b",                 # 2025-08-09
+                r"\b\d{1,2}/\d{1,2}(?:/\d{2,4})?\b"       # 8/9 or 8/9/2025
+            ]
+            for p in patterns:
+                m = _re.search(p, text, flags=_re.IGNORECASE)
+                if m:
+                    return m.group(0)
+            return None
+
+        def _extract_time_token(text: str) -> Optional[str]:
+            import re as _re
+            # Support "6 pm", "6:00 pm", "6 p.m.", "noon", "midnight", "evening" etc.
+            patterns = [
+                r"\b\d{1,2}:\d{2}\s*(?:a\.?m\.?|p\.?m\.?|am|pm)\b",
+                r"\b\d{1,2}\s*(?:a\.?m\.?|p\.?m\.?|am|pm)\b",
+                r"\b\d{1,2}:\d{2}\b",
+                r"\b(noon|midnight|morning|afternoon|evening|night)\b"
+            ]
+            for p in patterns:
+                m = _re.search(p, text, flags=_re.IGNORECASE)
+                if m:
+                    return m.group(0)
+            return None
+
+        def _normalize_ampm(t: Optional[str]) -> Optional[str]:
+            if not t:
+                return t
+            # Convert "p.m."/"a.m." -> "pm"/"am" - IMPROVED NORMALIZATION
+            normalized = t.lower()
+            normalized = normalized.replace("p.m.", "pm")
+            normalized = normalized.replace("a.m.", "am")
+            normalized = normalized.replace("p. m.", "pm") 
+            normalized = normalized.replace("a. m.", "am")
+            normalized = normalized.replace(" p. m.", " pm")
+            normalized = normalized.replace(" a. m.", " am")
+            # Handle spaces between number and am/pm
+            normalized = re.sub(r'(\d+)\s+(am|pm)', r'\1\2', normalized)
+            return normalized
+
+        # Lightweight intent / scheduling relevance guard
+        def _is_schedule_like(text: str) -> bool:
+            # Expanded verbs/nouns to avoid false negatives (e.g., "set up", "lunch")
+            kw = [
+                "schedule", "meeting", "call", "submit", "send", "review", "remind",
+                "appointment", "task", "deadline", "set up", "setup", "arrange",
+                "organize", "plan", "book", "meet", "lunch", "dinner", "interview",
+                "class", "lesson"
+            ]
+            t = text.lower()
+            return any(k in t for k in kw)
+
+        # Detect if any explicit or implicit time token exists (excluding broad parts of day)
+        def _has_explicit_time(text: str) -> bool:
+            import re
+            # FIXED: Support both "am/pm" and "a.m./p.m." formats
+            explicit = re.search(r"\b(\d{1,2}(:\d{2})?\s*(?:a\.?m\.?|p\.?m\.?|am|pm)|noon|midnight)\b", text, re.IGNORECASE)
+            return bool(explicit)
+
+        # Detect broad daytime phrases (morning/afternoon/evening) -> candidate for date-only
+        def _broad_day_reference(text: str) -> bool:
+            import re
+            return bool(re.search(r"\b(morning|afternoon|evening|night)\b", text, re.IGNORECASE))
+
+        has_time = _has_explicit_time(cleaned_text)
+        # Consider explicit time or explicit date mention as sufficient scheduling intent
+        scheduling_intent = _is_schedule_like(cleaned_text) or has_time or bool(_extract_date_token(cleaned_text))
+        broad_only = _broad_day_reference(cleaned_text) and not has_time
+
+        if not scheduling_intent:
+            # Return a graceful non-creation response
+            processing_time = (datetime.now() - start_time).total_seconds()
+            logger.info("🛈 Voice text not considered a scheduling command; skipping event creation")
+            return VoiceEventResponse(
+                success=False,
+                event_id=None,
+                event_data={},
+                nlp_analysis={
+                    'original_text': request.voice_text,
+                    'cleaned_text': cleaned_text,
+                    'extracted_title': '',
+                    'extracted_time': '',
+                    'extracted_location': ''
+                },
+                bert_classification={
+                    'priority': 3,
+                    'confidence': 0.0,
+                    'model_used': 'none',
+                    'final_priority': 3,
+                    'priority_override': False
+                },
+                processing_details={
+                    'total_processing_time': processing_time,
+                    'auto_scheduled': False
+                },
+                message='Ignored: not a scheduling command'
+            )
         
         # Step 3: Enhanced Hybrid Priority Classification
         from ..nlp.model_loader import get_global_bert_model
         bert_model = get_global_bert_model()
-        
+
         # Prepare event data for BERT
         event_for_bert = {
             'title': nlp_result.get('title', 'Voice Event'),
@@ -254,16 +359,16 @@ async def create_event_from_voice(
             'start_time': nlp_result.get('start_time', datetime.now().isoformat()),
             'location': nlp_result.get('location', '')
         }
-        
+
         # Get both NLP enhanced priority and BERT priority
         nlp_priority = nlp_result.get('priority', 3)  # Our enhanced keyword detection
         logger.info(f"🔍 Enhanced NLP Priority: {nlp_priority}")
-        
+
         # Get BERT priority prediction
         if bert_model and bert_model.is_trained:
             bert_priority, bert_confidence = bert_model.predict(event_for_bert)
             logger.info(f"🤖 BERT Classification: Priority {bert_priority}, Confidence {bert_confidence:.3f}")
-            
+
             # HYBRID DECISION: Use the higher priority between NLP enhanced and BERT
             # This ensures critical keywords (CEO, surgery) are never downgraded
             if nlp_priority >= 4 and nlp_priority > bert_priority:
@@ -287,34 +392,114 @@ async def create_event_from_voice(
             final_priority = nlp_priority
             hybrid_confidence = 0.8
             logger.warning("⚠️ BERT model not available, using enhanced NLP priority")
-        
+
         # Apply priority override if specified
         if request.priority_override:
             final_priority = request.priority_override
             logger.info(f"🔧 Priority override applied: {final_priority}")
-        
+
         bert_priority = final_priority  # For compatibility with existing response structure
         bert_confidence = hybrid_confidence
-        
-        # Step 4: Create event in database
+
+        # Step 4: Resolve temporal info (date/time) with TemporalResolver for tz-aware, AM/PM-correct times
+        # Normalize AM/PM markers in the cleaned text before token extraction
+        cleaned_text_norm = _normalize_ampm(cleaned_text)
+
+        date_token = _extract_date_token(cleaned_text_norm)
+        time_token = _extract_time_token(cleaned_text_norm)
+
+        resolver = TemporalResolver()  # defaults to UTC
+        start_dt_resolved: Optional[datetime] = None
+        end_dt_resolved: Optional[datetime] = None
+
         try:
-            # Verify user exists
-            user = db.query(User).filter(User.id == request.user_id).first()
-            if not user:
+            start_dt_resolved, end_dt_resolved = resolver.resolve_full_temporal(
+                date_text=date_token or "",
+                time_text=time_token or "",
+                duration_text=None,
+                event_type=nlp_result.get('event_type', 'default')
+            )
+        except Exception:
+            # Fallback handled below
+            start_dt_resolved, end_dt_resolved = None, None
+
+        # Helper to parse ISO-like strings to aware datetimes (UTC when 'Z')
+        def _parse_dt(val: Any) -> Optional[datetime]:
+            if isinstance(val, datetime):
+                return val
+            if isinstance(val, str):
+                try:
+                    s = val.strip()
+                    if s.endswith('Z'):
+                        # fromisoformat can't parse trailing Z; replace with +00:00
+                        s = s[:-1] + '+00:00'
+                    return datetime.fromisoformat(s)
+                except Exception:
+                    return None
+            return None
+
+        # Step 5: Create event in database
+        try:
+            # Resolve user: accept UUID (users.id) or cognito_sub string
+            user: Optional[User] = None
+            user_uuid: Optional[uuid.UUID] = None
+            if isinstance(request.user_id, uuid.UUID):
+                user_uuid = request.user_id
+                user = db.query(User).filter(User.id == user_uuid).first()
+            elif isinstance(request.user_id, str):
+                try:
+                    user_uuid = uuid.UUID(request.user_id)
+                    user = db.query(User).filter(User.id == user_uuid).first()
+                except Exception:
+                    # Treat as cognito_sub
+                    user = db.query(User).filter(User.cognito_sub == request.user_id).first()
+                    if user:
+                        user_uuid = user.id
+            else:
+                # Unsupported type
+                pass
+
+            if not user or not user_uuid:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
-                    detail=f"User with ID {request.user_id} not found"
+                    detail="User not found (accepts UUID or cognito_sub)"
                 )
             
+            # Prefer resolver times if available; otherwise fall back to NLP times (parsed)
+            nlp_start = _parse_dt(nlp_result.get('start_time'))
+            nlp_end = _parse_dt(nlp_result.get('end_time'))
+
+            start_time_dt = start_dt_resolved or nlp_start or datetime.now()
+            if end_dt_resolved is not None:
+                end_time_dt = end_dt_resolved
+            elif nlp_end is not None:
+                end_time_dt = nlp_end
+            else:
+                # Safe default 1h duration
+                end_time_dt = start_time_dt + timedelta(hours=1)
+
+            # If there is scheduling intent but no explicit time (date-only or broad period), mark as all-day
+            is_all_day = False
+            if scheduling_intent and not has_time:
+                # Anchor start/end to day bounds
+                day_anchor = start_time_dt
+                start_time_dt = day_anchor.replace(hour=0, minute=0, second=0, microsecond=0)
+                end_time_dt = start_time_dt + timedelta(hours=23, minutes=59)
+                is_all_day = True
+
             # Create event object
             event_data = {
                 'title': nlp_result.get('title', 'Voice Event'),
                 'description': f"Created from voice: {request.voice_text}",
-                'start_time': nlp_result.get('start_time', datetime.now()),
-                'end_time': nlp_result.get('end_time', datetime.now() + timedelta(hours=1)),
+                'start_time': start_time_dt,
+                'end_time': end_time_dt,
                 'location': nlp_result.get('location', ''),
-                'priority': final_priority,
-                'user_id': request.user_id,
+                'priority_level': final_priority,
+                'priority_confidence': bert_confidence,
+                'classification_method': 'voice_bert' if bert_model and bert_model.is_trained else 'voice_nlp',
+                'created_via': 'voice',
+                'is_all_day': is_all_day,
+                'user_id': user_uuid,
                 'created_at': datetime.now(),
                 'updated_at': datetime.now()
             }
@@ -325,7 +510,7 @@ async def create_event_from_voice(
             db.refresh(new_event)
             
             event_created = True
-            event_id = new_event.id
+            event_id = str(new_event.id)  # Convert UUID to string for response
             message = f"✅ Event created successfully from voice input with priority {final_priority}"
             
             logger.info(f"📅 Event created with ID: {event_id}")
@@ -414,7 +599,7 @@ async def voice_health_check():
 class VoiceAnalysisRequest(BaseModel):
     """Voice analysis request model"""
     voice_text: str = Field(..., min_length=1, max_length=5000, description="Voice input to analyze")
-    user_id: Optional[int] = Field(None, description="User ID for personalized analysis")
+    user_id: Optional[Union[str, uuid.UUID]] = Field(None, description="User ID (UUID) for personalized analysis")
     include_bert: bool = Field(True, description="Include BERT classification in analysis")
     detailed_analysis: bool = Field(False, description="Include detailed analysis information")
     

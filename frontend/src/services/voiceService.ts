@@ -2,7 +2,7 @@
  * Voice Service - Connects frontend to KairoCal Voice API with BERT classification
  */
 
-const API_BASE_URL = 'http://127.0.0.1:8001/api/v1';
+import { API_V1 } from '../config/api';
 
 export interface VoiceTranscribeResponse {
   transcribed_text: string;
@@ -11,18 +11,18 @@ export interface VoiceTranscribeResponse {
   processing_time: number;
   timestamp: string;
   metadata: {
-    [key: string]: any;
+  [key: string]: unknown;
   };
 }
 
 export interface VoiceEventResponse {
   success: boolean;
-  event_id?: number;
+  event_id?: string;
   event_data: {
-    [key: string]: any;
+  [key: string]: unknown;
   };
   nlp_analysis: {
-    [key: string]: any;
+  [key: string]: unknown;
   };
   bert_classification: {
     priority: number;
@@ -30,7 +30,7 @@ export interface VoiceEventResponse {
     reasoning: string;
   };
   processing_details: {
-    [key: string]: any;
+  [key: string]: unknown;
   };
   message: string;
 }
@@ -51,7 +51,7 @@ class VoiceService {
    */
   async testVoiceHealth(): Promise<boolean> {
     try {
-      const response = await fetch(`${API_BASE_URL}/voice/health`);
+      const response = await fetch(`${API_V1}/voice/health`);
       const data = await response.json();
       return data.status === 'healthy';
     } catch (error) {
@@ -63,9 +63,9 @@ class VoiceService {
   /**
    * Transcribe and clean voice text
    */
-  async transcribeVoice(text: string, userId?: number): Promise<VoiceTranscribeResponse> {
+  async transcribeVoice(text: string, userId?: string): Promise<VoiceTranscribeResponse> {
     try {
-      const response = await fetch(`${API_BASE_URL}/voice/transcribe`, {
+      const response = await fetch(`${API_V1}/voice/transcribe`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -92,9 +92,9 @@ class VoiceService {
   /**
    * Create event from voice input using BERT classification
    */
-  async createEventFromVoice(voiceText: string, userId: number = 1): Promise<VoiceEventResponse> {
+  async createEventFromVoice(voiceText: string, userId: string = 'frontend-test-user'): Promise<VoiceEventResponse> {
     try {
-      const response = await fetch(`${API_BASE_URL}/voice/create-event`, {
+      const response = await fetch(`${API_V1}/voice/create-event`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -121,12 +121,12 @@ class VoiceService {
   /**
    * Analyze voice input for priority using BERT
    */
-  async analyzeVoiceInput(voiceText: string, userId: number = 1): Promise<VoiceAnalysisResponse> {
+  async analyzeVoiceInput(voiceText: string, userId: string = 'frontend-test-user'): Promise<VoiceAnalysisResponse> {
     try {
       console.log('🔍 Analyzing voice input:', voiceText);
-      console.log('🌐 API URL:', `${API_BASE_URL}/voice/analyze-voice`);
+      console.log('🌐 API URL:', `${API_V1}/voice/analyze-voice`);
       
-      const response = await fetch(`${API_BASE_URL}/voice/analyze-voice`, {
+      const response = await fetch(`${API_V1}/voice/analyze-voice`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -175,8 +175,21 @@ class VoiceService {
         return;
       }
 
-      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-      const recognition = new SpeechRecognition();
+      const SpeechRecognitionCtor =
+        (window as unknown as { SpeechRecognition?: unknown }).SpeechRecognition ||
+        (window as unknown as { webkitSpeechRecognition?: unknown }).webkitSpeechRecognition;
+      const Ctor = SpeechRecognitionCtor as new () => {
+        continuous: boolean;
+        interimResults: boolean;
+        maxAlternatives: number;
+        lang: string;
+        onstart: () => void;
+        onresult: (event: Event) => void;
+        onerror: (event: Event) => void;
+        onend: () => void;
+        start: () => void;
+      };
+      const recognition = new Ctor();
 
       recognition.continuous = false;
       recognition.interimResults = false;
@@ -187,17 +200,19 @@ class VoiceService {
         console.log('🎤 Voice recognition started');
       };
 
-      recognition.onresult = (event: any) => {
-        const transcript = event.results[0][0].transcript;
-        const confidence = event.results[0][0].confidence;
+      recognition.onresult = (event: Event) => {
+        const e = event as unknown as { results: Array<Array<{ transcript: string; confidence: number }>> };
+        const transcript = e.results[0][0].transcript;
+        const confidence = e.results[0][0].confidence;
         
         console.log(`🗣️ Recognized: "${transcript}" (confidence: ${confidence})`);
         resolve(transcript);
       };
 
-      recognition.onerror = (event: any) => {
-        console.error('Voice recognition error:', event.error);
-        reject(new Error(`Voice recognition failed: ${event.error}`));
+      recognition.onerror = (event: Event) => {
+        const err: string = (event as unknown as { error?: string }).error || 'unknown_error';
+        console.error('Voice recognition error:', err);
+        reject(new Error(`Voice recognition failed: ${err}`));
       };
 
       recognition.onend = () => {

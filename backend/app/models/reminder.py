@@ -1,15 +1,14 @@
 # backend/app/models/reminder.py
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey
-from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
-from app.models import BaseModel
+from app.models import BaseModel, GUID
 
 class Reminder(BaseModel):
     """Reminder model for event notifications"""
     __tablename__ = "reminders"
     
     # Foreign key to event
-    event_id = Column(UUID(as_uuid=True), ForeignKey("events.id"), nullable=False, index=True)
+    event_id = Column(GUID(), ForeignKey("events.id"), nullable=False, index=True)
     
     # Reminder timing (minutes before event)
     minutes_before = Column(Integer, nullable=False)

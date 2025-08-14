@@ -23,18 +23,12 @@ class ModelLoadError(Exception):
     pass
 
 def check_model_files_exist() -> bool:
-    """Check if required model files exist"""
-    model_dir = Path("backend/models/bert_priority_classifier")
-    required_files = ["pytorch_model.bin", "config.json", "tokenizer.json"]
-    
-    if not model_dir.exists():
+    """Deprecated helper: kept for compatibility, now delegates to BERTModelLoader with settings path."""
+    try:
+        loader = get_model_loader()
+        return loader._check_model_files_exist()
+    except Exception:
         return False
-        
-    for file_name in required_files:
-        if not (model_dir / file_name).exists():
-            return False
-    
-    return True
 
 class BERTModelLoader:
     """

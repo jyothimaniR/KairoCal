@@ -18,6 +18,14 @@ export default defineConfig({
     hmr: {
       port: 3001,
     },
+    // Optional: proxy API to backend on 8000 for single-origin dev
+    proxy: {
+      '/api': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+        secure: false,
+      },
+    },
     // File system access
     fs: {
       strict: false,

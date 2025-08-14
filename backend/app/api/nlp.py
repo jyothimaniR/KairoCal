@@ -25,27 +25,31 @@ logger = logging.getLogger(__name__)
 # Initialize router
 router = APIRouter(prefix="/api/v1/nlp", tags=["NLP & BERT"])
 
-# Global classifier instance
+# Global classifier instance (loaded via model_loader to support offline bundles)
 _bert_classifier = None
 _conflict_detector = None
 
 def get_bert_classifier():
-    """Get or initialize BERT classifier"""
+    """Get or initialize BERT classifier via model_loader (prefers trained local weights)."""
     global _bert_classifier
     if _bert_classifier is None and BERT_AVAILABLE:
         try:
-            _bert_classifier = AdvancedEventPriorityClassifier()
+            # Load via centralized loader to pick up backend/models path and avoid network calls
+            from app.nlp.model_loader import load_bert_model
+            _bert_classifier = load_bert_model()
         except Exception as e:
             logger.error(f"Failed to initialize BERT classifier: {e}")
             raise HTTPException(status_code=500, detail="BERT classifier initialization failed")
     return _bert_classifier
 
 def get_conflict_detector():
-    """Get or initialize conflict detector"""
+    """Get or initialize conflict detector, pointing it at the local model path."""
     global _conflict_detector
     if _conflict_detector is None and BERT_AVAILABLE:
         try:
-            _conflict_detector = SmartConflictDetector()
+            from app.config import get_settings
+            settings = get_settings()
+            _conflict_detector = SmartConflictDetector(bert_model_path=settings.bert_model_path)
         except Exception as e:
             logger.error(f"Failed to initialize conflict detector: {e}")
             raise HTTPException(status_code=500, detail="Conflict detector initialization failed")
@@ -95,7 +99,7 @@ class ModelStatusResponse(BaseModel):
 # API Endpoints
 @router.get("/model-status", response_model=ModelStatusResponse)
 async def get_model_status():
-    """Get BERT model status and information"""
+    """Get BERT model status and information, preferring local bundled weights."""
     if not BERT_AVAILABLE:
         return ModelStatusResponse(
             bert_available=False,
@@ -103,20 +107,21 @@ async def get_model_status():
             model_info={"error": "BERT components not available"},
             performance_stats={}
         )
-    
+
     try:
-        classifier = get_bert_classifier()
+        # Use model loader for accurate availability and to avoid accidental downloads
+        from app.nlp.model_loader import get_model_loader
+        loader = get_model_loader()
+        available = loader.is_model_available()
+        classifier = get_bert_classifier() if available else None
+        model_info = loader.get_model_info()
+
         return ModelStatusResponse(
-            bert_available=True,
-            model_trained=classifier.is_trained,
-            model_info={
-                "model_type": "DistilBERT + Multi-dimensional Features",
-                "priority_levels": 5,
-                "feature_dimensions": 64,
-                "device": str(classifier.device)
-            },
+            bert_available=available,
+            model_trained=bool(model_info.get("trained")) if model_info.get("loaded") else False,
+            model_info=model_info,
             performance_stats={
-                "fallback_mode": not classifier.is_trained,
+                "fallback_mode": not bool(model_info.get("trained")),
                 "confidence_threshold": 0.85
             }
         )

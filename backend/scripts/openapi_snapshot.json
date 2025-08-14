@@ -183,6 +183,40 @@
         "title": "ConflictCheckRequest",
         "type": "object"
       },
+      "ConflictCheckWrappedResponse": {
+        "description": "Wrapped response for /conflicts/check to standardize contract.",
+        "properties": {
+          "conflicts": {
+            "items": {
+              "$ref": "#/components/schemas/ConflictDetectionResponse"
+            },
+            "title": "Conflicts",
+            "type": "array"
+          },
+          "correlation_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Correlation Id"
+          },
+          "engine": {
+            "default": "basic_v1",
+            "title": "Engine",
+            "type": "string"
+          }
+        },
+        "required": [
+          "conflicts",
+          "correlation_id"
+        ],
+        "title": "ConflictCheckWrappedResponse",
+        "type": "object"
+      },
       "ConflictDetectionResponse": {
         "description": "Response schema for detected conflicts",
         "properties": {
@@ -335,6 +369,40 @@
           "reasoning"
         ],
         "title": "ConflictResolutionResponse",
+        "type": "object"
+      },
+      "ConflictResolveWrappedResponse": {
+        "description": "Wrapped response for /conflicts/resolve to standardize contract.",
+        "properties": {
+          "correlation_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Correlation Id"
+          },
+          "engine": {
+            "default": "basic_v1",
+            "title": "Engine",
+            "type": "string"
+          },
+          "resolutions": {
+            "items": {
+              "$ref": "#/components/schemas/ConflictResolutionResponse"
+            },
+            "title": "Resolutions",
+            "type": "array"
+          }
+        },
+        "required": [
+          "resolutions",
+          "correlation_id"
+        ],
+        "title": "ConflictResolveWrappedResponse",
         "type": "object"
       },
       "EventCreate": {
@@ -2771,11 +2839,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/ConflictDetectionResponse"
-                  },
-                  "title": "Response Check Conflicts Api V1 Conflicts Check Post",
-                  "type": "array"
+                  "$ref": "#/components/schemas/ConflictCheckWrappedResponse"
                 }
               }
             },
@@ -2866,11 +2930,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/ConflictResolutionResponse"
-                  },
-                  "title": "Response Resolve Conflicts Api V1 Conflicts Resolve Post",
-                  "type": "array"
+                  "$ref": "#/components/schemas/ConflictResolveWrappedResponse"
                 }
               }
             },
@@ -4641,7 +4701,7 @@
         ]
       },
       "post": {
-        "description": "Create a new user (simplified - no auth required for now)",
+        "description": "Create a new user (simplified - no auth required for now).\n\nRobust duplicate handling & normalization to avoid 500s from constraint violations.",
         "operationId": "create_user_api_v1_users__post",
         "requestBody": {
           "content": {
