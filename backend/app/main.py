@@ -52,6 +52,13 @@ try:
 except ImportError:
     HAS_VOICE = False
 
+# NEW: Priority-based scheduling API (safe import)
+try:
+    from app.api.priority_api import router as priority_router
+    HAS_PRIORITY_API = True
+except ImportError:
+    HAS_PRIORITY_API = False
+
 # Import models to ensure they're registered with SQLAlchemy
 from app.models import User, Event, Reminder
 
@@ -64,17 +71,10 @@ app = FastAPI(
     debug=settings.app_debug
 )
 
-# Configure CORS
+# Configure CORS - Allow all origins for testing
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://localhost:4173", 
-        "http://127.0.0.1:4173",
-        "http://127.0.0.1:5173",
-        "http://localhost:3000",
-        "http://127.0.0.1:3000"
-    ],
+    allow_origins=["*"],  # Allow all origins for testing
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -98,6 +98,10 @@ if HAS_CONFLICTS and not _disable_conflicts:
 
 if HAS_VOICE:
     app.include_router(voice_router)
+
+# NEW: Include priority-based scheduling API (safe addition)
+if HAS_PRIORITY_API:
+    app.include_router(priority_router)
 
 import os, logging, time, uuid, contextvars, traceback
 logger = logging.getLogger(__name__)
@@ -227,6 +231,12 @@ def read_root():
             "🎯 Auto-Resolution System"
         ])
     
+    if HAS_PRIORITY_API:
+        features.extend([
+            "📅 Priority-Based Scheduling",
+            "⚡ Intelligent Time Slot Suggestions"
+        ])
+    
     return {
         "message": "KairoCal API with BERT Priority Classification is running!",
         "status": "healthy",
@@ -250,6 +260,9 @@ def health_check():
     
     if HAS_CONFLICTS:
         status["conflict_detection"] = "operational"
+    
+    if HAS_PRIORITY_API:
+        status["priority_scheduling"] = "operational"
     
     return status
 
@@ -290,6 +303,13 @@ def api_status():
             "🎯 Auto-Resolution System"
         ])
         endpoints["conflicts"] = "/api/v1/conflicts"
+    
+    if HAS_PRIORITY_API:
+        features.extend([
+            "📅 Priority-Based Intelligent Scheduling",
+            "⚡ Smart Time Slot Suggestions"
+        ])
+        endpoints["priority"] = "/api/v1/priority"
     
     return {
         "api_version": "1.0.0",

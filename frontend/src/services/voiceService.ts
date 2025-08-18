@@ -93,6 +93,20 @@ class VoiceService {
    * Create event from voice input using BERT classification
    */
   async createEventFromVoice(voiceText: string, userId: string = 'frontend-test-user'): Promise<VoiceEventResponse> {
+    // Get user's duration preference from settings
+    let durationPreference: string | number = 'smart';
+    try {
+      const userSettings = localStorage.getItem('user-preferences');
+      if (userSettings) {
+        const parsed = JSON.parse(userSettings);
+        durationPreference = parsed.default_event_duration || 'smart';
+      }
+    } catch (error) {
+      console.log('📝 Using default duration preference (smart)');
+    }
+
+    console.log('⏱️ Voice service using duration preference:', durationPreference);
+
     try {
       const response = await fetch(`${API_V1}/voice/create-event`, {
         method: 'POST',
@@ -103,7 +117,8 @@ class VoiceService {
           voice_text: voiceText,
           user_id: userId,
           auto_schedule: true,
-          priority_override: null
+          priority_override: null,
+          duration_preference: durationPreference
         }),
       });
 

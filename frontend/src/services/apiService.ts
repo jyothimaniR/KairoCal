@@ -4,7 +4,6 @@
  */
 
 import { API_V1 } from '../config/api';
-import { getCurrentUserId } from '../config/user';
 
 export interface Event {
   id?: string;
@@ -363,6 +362,20 @@ class APIService {
     console.log('🎤 Creating voice event:', { voiceText, userId });
     console.log('🌐 API URL:', `${API_V1}/voice/create-event`);
 
+    // Get user's duration preference from settings
+    let durationPreference: string | number = 'smart';
+    try {
+      const userSettings = localStorage.getItem('user-preferences');
+      if (userSettings) {
+        const parsed = JSON.parse(userSettings);
+        durationPreference = parsed.default_event_duration || 'smart';
+      }
+    } catch (error) {
+      console.log('📝 Using default duration preference (smart)');
+    }
+
+    console.log('⏱️ Duration preference:', durationPreference);
+
     try {
       const response = await fetch(`${API_V1}/voice/create-event`, {
         method: 'POST',
@@ -372,7 +385,8 @@ class APIService {
         body: JSON.stringify({
           voice_text: voiceText,
           user_id: userId,
-          auto_schedule: true
+          auto_schedule: true,
+          duration_preference: durationPreference
         }),
       });
 
@@ -406,14 +420,46 @@ class APIService {
     userId: string = 'frontend-test-user'
   ): Promise<Event | null> {
     try {
+      // Helper function to safely format datetime without timezone conversion
+      const safeFormatDateTime = (dateTimeInput: string | undefined): string => {
+        if (!dateTimeInput) {
+          // Default fallback - current time formatted without timezone conversion
+          const now = new Date();
+          const year = now.getFullYear();
+          const month = String(now.getMonth() + 1).padStart(2, '0');
+          const day = String(now.getDate()).padStart(2, '0');
+          const hours = String(now.getHours()).padStart(2, '0');
+          const minutes = String(now.getMinutes()).padStart(2, '0');
+          const seconds = String(now.getSeconds()).padStart(2, '0');
+          return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+        }
+        
+        // If already properly formatted (YYYY-MM-DDTHH:mm:ss), pass through
+        if (typeof dateTimeInput === 'string' && dateTimeInput.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/)) {
+          return dateTimeInput;
+        }
+        
+        // If ISO string or other format, parse and reformat without timezone conversion
+        const date = new Date(dateTimeInput);
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        const seconds = String(date.getSeconds()).padStart(2, '0');
+        return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+      };
+      
       const payload = {
         ...eventData,
-        start_time: eventData.start_time
-          ? new Date(eventData.start_time).toISOString()
-          : new Date().toISOString(),
-        end_time: eventData.end_time
-          ? new Date(eventData.end_time).toISOString()
-          : new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+        start_time: safeFormatDateTime(eventData.start_time),
+        end_time: safeFormatDateTime(eventData.end_time) || (() => {
+          // Default end time: 1 hour after start time
+          const startTime = safeFormatDateTime(eventData.start_time);
+          const startDate = new Date(startTime);
+          startDate.setHours(startDate.getHours() + 1);
+          return safeFormatDateTime(startDate.toISOString());
+        })(),
   // Mark typed-created events as manual so UI does not show voice tag
   created_via: eventData.created_via ?? 'manual',
         classification_method: 'auto',
@@ -471,11 +517,45 @@ class APIService {
   ): Promise<boolean> {
     try {
       if (!eventId || eventId.length < 32) return false;
+      
+      // TIMEZONE FIX: Ensure we're sending local time format, not UTC
+      // If input is a Date object (from drag-drop), format it correctly
+      const formatLocalDateTime = (timeInput: string | Date): string => {
+        let date: Date;
+        
+        if (typeof timeInput === 'string') {
+          // If already properly formatted, use as-is
+          if (timeInput.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/)) {
+            return timeInput;
+          }
+          date = new Date(timeInput);
+        } else {
+          date = timeInput;
+        }
+        
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        const seconds = String(date.getSeconds()).padStart(2, '0');
+        return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+      };
+      
+      const formattedStartTime = formatLocalDateTime(newStartTime);
+      const formattedEndTime = formatLocalDateTime(newEndTime);
+      
+      console.log(`🔧 RESCHEDULE API - Formatted times: ${formattedStartTime} to ${formattedEndTime}`);
+      
       const response = await fetch(`${API_V1}/events/${eventId}?cognito_sub=${userId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ start_time: newStartTime, end_time: newEndTime }),
+        body: JSON.stringify({ 
+          start_time: formattedStartTime, 
+          end_time: formattedEndTime 
+        }),
       });
+      
       if (!response.ok) {
         const errorText = await response.text();
         throw new Error(
@@ -487,6 +567,32 @@ class APIService {
     } catch (error) {
       console.error('Error rescheduling event:', error);
       return false;
+    }
+  }
+
+  // Update event (comprehensive)
+  async updateEvent(eventId: string, eventData: Partial<Event>, userId: string = 'frontend-test-user'): Promise<Event | null> {
+    try {
+      if (!eventId || eventId.length < 32) return null;
+      
+      const response = await fetch(`${API_V1}/events/${eventId}?cognito_sub=${userId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(eventData),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(
+          `Failed to update event: ${response.statusText} - ${errorText}`
+        );
+      }
+      
+      const updatedEvent = await response.json();
+      return updatedEvent;
+    } catch (error) {
+      console.error('Error updating event:', error);
+      return null;
     }
   }
 
@@ -568,6 +674,196 @@ class APIService {
       console.error('Error fetching system health:', error);
       return { voice: { status: 'error' }, analytics: { status: 'error' } } as SystemHealthSummary;
     }
+  }
+
+  // ======================================
+  // NEW: PRIORITY-BASED SCHEDULING METHODS
+  // ======================================
+
+  /**
+   * Check for conflicts with a proposed event
+   */
+  async checkConflicts(userId: string, eventData: {
+    title: string;
+    start_time: string;
+    end_time: string;
+    description?: string;
+  }): Promise<any> {
+    try {
+      const response = await fetch(`${API_V1}/conflicts/check?cognito_sub=${userId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(eventData),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Conflict check failed: ${response.statusText}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error checking conflicts:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get priority-based time slot suggestions
+   */
+  async getPriorityTimeSlots(params: {
+    priority_level: number;
+    duration_minutes: number;
+    user_id?: string;
+    preferred_date?: string;
+    exclude_times?: Array<{start: string; end: string}>;
+    num_suggestions?: number;
+  }): Promise<{
+    success: boolean;
+    message: string;
+    original_priority: number;
+    suggested_slots: Array<{
+      start_time: string;
+      end_time: string;
+      confidence: number;
+      reasoning: string;
+      priority_match_score: number;
+      availability_score: number;
+      is_prime_time: boolean;
+      conflict_risk: number;
+    }>;
+    reasoning: string;
+    total_slots_considered: number;
+    filter_criteria_used: string[];
+    fallback_used: boolean;
+    processing_time_ms: number;
+  }> {
+    try {
+      const user_id = params.user_id || 'default_user';
+      const requestBody = {
+        priority_level: params.priority_level,
+        duration_minutes: params.duration_minutes,
+        preferred_date: params.preferred_date,
+        exclude_times: params.exclude_times,
+        num_suggestions: params.num_suggestions || 5
+      };
+
+      const response = await fetch(`${API_V1}/priority/resolve?user_id=${user_id}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestBody)
+      });
+
+      if (!response.ok) {
+        throw new Error(`Priority API error: ${response.status} ${response.statusText}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error getting priority time slots:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get priority time windows configuration
+   */
+  async getPriorityWindows(): Promise<{
+    success: boolean;
+    data: {
+      priority_windows: Record<string, {name: string; hours: string; start: number; end: number}>;
+      prime_business_hours: {start: number; end: number; description: string};
+      extended_business_hours: {start: number; end: number; description: string};
+      flexible_hours: {start: number; end: number; description: string};
+      explanation: string;
+    };
+    message: string;
+  }> {
+    try {
+      const response = await fetch(`${API_V1}/priority/windows`);
+      
+      if (!response.ok) {
+        throw new Error(`Priority Windows API error: ${response.status} ${response.statusText}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error getting priority windows:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get priority system health status
+   */
+  async getPriorityHealth(): Promise<{
+    success: boolean;
+    health: {
+      priority_scheduler: string;
+      bert_classification: string;
+      user_behavior_analytics: string;
+      smart_conflict_detection: string;
+      overall_status: string;
+      warning?: string;
+    };
+    timestamp: string;
+    message: string;
+  }> {
+    try {
+      const response = await fetch(`${API_V1}/priority/health`);
+      
+      if (!response.ok) {
+        throw new Error(`Priority Health API error: ${response.status} ${response.statusText}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error getting priority health:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Test priority scheduling functionality
+   */
+  async testPriorityScheduling(priority: number = 3, duration: number = 60): Promise<{
+    test_successful: boolean;
+    priority_level: number;
+    duration_minutes: number;
+    suggestions_generated: number;
+    reasoning: string;
+    time_window_used: string;
+    sample_slots: Array<{
+      start: string;
+      end: string;
+      confidence: number;
+      is_prime_time: boolean;
+    }>;
+    message: string;
+    error?: string;
+  }> {
+    try {
+      const response = await fetch(`${API_V1}/priority/test?priority=${priority}&duration=${duration}`);
+      
+      if (!response.ok) {
+        throw new Error(`Priority Test API error: ${response.status} ${response.statusText}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error testing priority scheduling:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get base URL for direct API calls (used by components)
+   */
+  getBaseUrl(): string {
+    return API_V1.replace('/api/v1', '');
   }
 }
 

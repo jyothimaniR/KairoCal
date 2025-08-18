@@ -8,6 +8,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { apiService } from '../../services/apiService';
 import { voiceService } from '../../services/voiceService';
+import { getPriorityLabel } from '../../utils/priorityUtils';
 
 interface UnifiedEventCreatorProps {
   onEventCreated?: () => void;
@@ -260,7 +261,10 @@ const UnifiedEventCreator: React.FC<UnifiedEventCreatorProps> = ({ onEventCreate
         <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
           <div className="text-sm text-blue-800">
             <div className="font-medium">
-              BERT Priority: {analysis.priority}/5 • Confidence: {Math.round(analysis.confidence * 100)}%
+              {(() => {
+                const { label: priorityLabel } = getPriorityLabel(analysis.priority);
+                return `Priority: ${priorityLabel} • Confidence: ${Math.round(analysis.confidence * 100)}%`;
+              })()}
             </div>
             {analysis.reasoning && (
               <div className="text-xs text-blue-600 mt-1">💡 {analysis.reasoning}</div>

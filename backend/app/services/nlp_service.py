@@ -6,7 +6,7 @@ Integrates with BERT priority classification and voice-specific processing
 import re
 import logging
 import time
-from typing import Dict, Any, Optional, List, Tuple
+from typing import Dict, Any, Optional, List, Tuple, Union
 from datetime import datetime, timedelta
 from dateutil import parser as date_parser
 
@@ -122,12 +122,13 @@ class NLPService:
             'travel': [r'\b(flight|train|travel|trip|vacation|journey)\b']
         }
     
-    async def process_voice_input(self, voice_text: str) -> Dict[str, Any]:
+    async def process_voice_input(self, voice_text: str, duration_preference: Optional[Union[str, int]] = None) -> Dict[str, Any]:
         """
         Process voice input text and extract event information
         
         Args:
             voice_text: Cleaned voice input text
+            duration_preference: User's duration preference ('smart' or fixed minutes)
             
         Returns:
             Dictionary with extracted event information
@@ -135,7 +136,7 @@ class NLPService:
         start_time = time.time()
         
         try:
-            logger.info(f"🎤 Processing voice input: '{voice_text}'")
+            logger.info(f"🎤 Processing voice input: '{voice_text}' with duration preference: {duration_preference}")
             
             # Clean voice text further
             cleaned_text = self._clean_voice_text(voice_text)
@@ -150,13 +151,20 @@ class NLPService:
                 'priority': self._extract_priority(cleaned_text),
                 'event_type': self._extract_event_type(cleaned_text),
                 'participants': self._extract_participants(cleaned_text),
-                'duration': self._extract_duration(cleaned_text)
+                'duration': self._extract_duration(cleaned_text, duration_preference)
             }
             
-            # Calculate end time if not explicitly provided
-            if event_data['start_time'] and not event_data['end_time']:
-                duration_minutes = event_data.get('duration', 60)  # Default 1 hour
+
+            # Always set start_time and end_time if duration is detected
+            duration_minutes = event_data.get('duration', 60)
+            if event_data['start_time']:
+                # If start_time is found, set end_time accordingly
                 event_data['end_time'] = event_data['start_time'] + timedelta(minutes=duration_minutes)
+            else:
+                # If no start_time, use now as anchor for both
+                now = datetime.now()
+                event_data['start_time'] = now
+                event_data['end_time'] = now + timedelta(minutes=duration_minutes)
             
             # Calculate confidence score
             confidence = self._calculate_voice_confidence(event_data, cleaned_text)
@@ -234,7 +242,10 @@ class NLPService:
             r'\b(morning|afternoon|evening|night|noon|midnight|dawn|dusk)\b',
             r'\b(early|late)\s+(morning|afternoon|evening|night)\b',
             
-            # Duration and timing
+            # Duration and timing - ENHANCED PATTERNS FOR TITLE CLEANING
+            r'\b(for|lasting|duration|time)\s+\d+\s*(minutes?|mins?|hours?|hrs?)\b',
+            r'\b\d+\s*(minute|min|hour|hr)\s*(long|duration|meeting|appointment|call|break|session)?\b',
+            r'\b(for|lasting)\s+(half\s+an?\s+hour|quarter\s+hour|all\s+day)\b',
             r'\b(in\s+\d+\s+(minutes?|hours?|days?|weeks?|months?))\b',
             r'\b(after\s+\d+\s+(minutes?|hours?|days?))\b',
             r'\b(within\s+\d+\s+(minutes?|hours?|days?))\b',
@@ -475,19 +486,36 @@ class NLPService:
     
     def _extract_location(self, text: str) -> Optional[str]:
         """Extract location from voice text"""
+        # Remove time and duration patterns first to avoid confusion
+        clean_text = text
+        
+        # Remove time patterns that might be confused with locations
+        time_patterns_to_remove = [
+            r'\b\d{1,2}:\d{2}\s*(?:a\.?m\.?|p\.?m\.?|am|pm)\b',
+            r'\b\d{1,2}\s*(?:a\.?m\.?|p\.?m\.?|am|pm)\b',
+            r'\b(for|lasting)\s+\d+\s*(minutes?|mins?|hours?|hrs?)\b',
+            r'\b\d+\s*(minute|min|hour|hr)s?\b',
+        ]
+        
+        for pattern in time_patterns_to_remove:
+            clean_text = re.sub(pattern, '', clean_text, flags=re.IGNORECASE)
+        
         location_patterns = [
-            r'(?:at|in|@)\s+(.+?)(?:\s+at\s+\d|\s+on\s+\w|$)',
-            r'location\s+(.+?)(?:\s+at\s+\d|\s+on\s+\w|$)',
-            r'room\s+(\w+)',
-            r'conference room\s+(\w+)',
-            r'building\s+(.+?)(?:\s+at\s+\d|\s+on\s+\w|$)'
+            r'(?:at|in|@)\s+([a-zA-Z][a-zA-Z\s]+?)(?:\s+(?:at|on|for|tomorrow|today|tonight)\s|\s*$)',
+            r'location\s+([a-zA-Z][a-zA-Z\s]+?)(?:\s+(?:at|on|for|tomorrow|today|tonight)\s|\s*$)',
+            r'room\s+([a-zA-Z0-9]+)',
+            r'conference room\s+([a-zA-Z0-9\s]+)',
+            r'building\s+([a-zA-Z][a-zA-Z\s]+?)(?:\s+(?:at|on|for|tomorrow|today|tonight)\s|\s*$)'
         ]
         
         for pattern in location_patterns:
-            match = re.search(pattern, text, re.IGNORECASE)
+            match = re.search(pattern, clean_text, re.IGNORECASE)
             if match:
                 location = match.group(1).strip()
-                if len(location) > 2:  # Avoid single characters
+                # Additional validation - avoid time-like strings
+                if (len(location) > 2 and 
+                    not re.match(r'^\d+\s*(am|pm|a\.?m\.?|p\.?m\.?)$', location, re.IGNORECASE) and
+                    not re.match(r'^\d+\s*(minute|min|hour|hr)', location, re.IGNORECASE)):
                     return location.title()
         
         return None
@@ -517,10 +545,17 @@ class NLPService:
             logger.info("👔 Executive/Leadership event detected - setting priority to 5 (CRITICAL)")
             return 5
         
-        # Time sensitivity adjustments
-        if 'today' in text_lower or 'now' in text_lower or 'immediately' in text_lower:
+        # Time sensitivity adjustments (more conservative)
+        # Only upgrade for truly urgent time indicators, not just "today"
+        urgent_time_indicators = ['now', 'immediately', 'asap', 'right now', 'urgent today', 'emergency today']
+        if any(indicator in text_lower for indicator in urgent_time_indicators):
             if priority < 4:
-                logger.info("⏰ Time-sensitive event detected - increasing priority")
+                logger.info("⚠️ Urgent time indicator detected - increasing priority")
+                priority = min(5, priority + 1)
+        elif 'today' in text_lower and any(urgent in text_lower for urgent in ['urgent', 'emergency', 'critical', 'asap']):
+            # Only upgrade "today" events if they also contain urgent keywords
+            if priority < 4:
+                logger.info("⏰ Urgent event today detected - increasing priority")
                 priority = min(5, priority + 1)
         
         logger.info(f"📊 Final priority assigned: {priority}")
@@ -554,8 +589,9 @@ class NLPService:
         
         return participants
     
-    def _extract_duration(self, text: str) -> int:
-        """Extract duration in minutes from voice text"""
+    def _extract_duration(self, text: str, duration_preference: Optional[Union[str, int]] = None) -> int:
+        """Extract duration in minutes from voice text using Hybrid Smart System or user preference"""
+        # Check for explicit duration patterns first (always takes priority)
         duration_patterns = [
             r'(?:for|lasting)\s+(\d+)\s*(?:hours?|hrs?)',
             r'(?:for|lasting)\s+(\d+)\s*(?:minutes?|mins?)',
@@ -582,18 +618,127 @@ class NLPService:
                     else:
                         return duration
         
-        # Default durations based on event type
-        event_type = self._extract_event_type(text)
-        default_durations = {
-            'meeting': 60,
-            'call': 30,
-            'appointment': 30,
-            'lunch': 90,
-            'dinner': 120,
-            'coffee': 30
+        # Apply user's duration preference
+        if duration_preference == 'smart':
+            # Use HYBRID SMART DURATION SYSTEM
+            return self._get_smart_duration(text)
+        elif isinstance(duration_preference, int):
+            # Use fixed duration preference
+            return duration_preference
+        else:
+            # Default behavior - use smart system
+            return self._get_smart_duration(text)
+    
+    def _get_smart_duration(self, text: str) -> int:
+        """Hybrid Smart Duration Detection System"""
+        text_lower = text.lower()
+        
+        # PHASE 1: Exact phrase matching (highest priority)
+        exact_phrases = {
+            # Work combinations
+            "yoga class": 75, "pilates class": 75, "fitness class": 60,
+            "coffee meeting": 45, "lunch meeting": 90, "dinner meeting": 120,
+            "team standup": 15, "daily standup": 15, "standup meeting": 15,
+            "one on one": 30, "1:1 meeting": 30, "client call": 60,
+            "team meeting": 60, "all hands": 60, "town hall": 90,
+            "job interview": 60, "phone interview": 30, "technical interview": 90,
+            
+            # Health & Fitness combinations
+            "gym workout": 60, "cardio workout": 45, "strength training": 60,
+            "yoga session": 75, "meditation session": 30, "therapy session": 60,
+            "doctor appointment": 45, "dentist appointment": 60, "vet appointment": 45,
+            
+            # Food & Social combinations
+            "coffee chat": 30, "lunch date": 120, "dinner party": 180,
+            "business lunch": 90, "team lunch": 90, "family dinner": 120,
+            "happy hour": 120, "networking event": 120,
+            
+            # Shopping & Errands
+            "grocery shopping": 75, "clothes shopping": 120, "online shopping": 45,
+            "bank visit": 30, "post office": 20, "pharmacy pickup": 15,
+            
+            # Education & Learning
+            "online class": 90, "workshop session": 180, "study session": 120,
+            "tutoring session": 60, "language lesson": 60,
+            
+            # Entertainment
+            "movie night": 150, "game night": 180, "netflix and chill": 120
         }
         
-        return default_durations.get(event_type, 60)
+        # Check exact phrases first
+        for phrase, duration in exact_phrases.items():
+            if phrase in text_lower:
+                return duration
+        
+        # PHASE 2: Individual keyword matching with weighted averages
+        keyword_durations = {
+            # Work & Business
+            "meeting": 60, "call": 30, "interview": 60, "standup": 15,
+            "presentation": 90, "demo": 45, "review": 90, "planning": 120,
+            "workshop": 180, "training": 240, "onboarding": 120, "conference": 480,
+            "webinar": 60, "seminar": 120, "briefing": 30,
+            
+            # Health & Fitness
+            "gym": 60, "workout": 45, "yoga": 75, "pilates": 75,
+            "run": 30, "running": 45, "walk": 45, "walking": 60,
+            "bike": 60, "cycling": 90, "swim": 60, "swimming": 60,
+            "crossfit": 60, "zumba": 60, "aerobics": 45,
+            
+            # Food & Social  
+            "breakfast": 45, "lunch": 90, "dinner": 120, "brunch": 120,
+            "coffee": 30, "drinks": 120, "party": 180, "date": 120,
+            "bbq": 180, "picnic": 240, "potluck": 180,
+            
+            # Education & Learning
+            "class": 90, "lecture": 60, "study": 120, "exam": 180,
+            "tutoring": 60, "research": 180, "homework": 90,
+            "lesson": 60, "course": 120,
+            
+            # Medical & Personal Care
+            "doctor": 45, "dentist": 60, "therapy": 60, "massage": 90,
+            "haircut": 60, "manicure": 45, "facial": 90, "spa": 120,
+            "checkup": 30, "surgery": 240, "physical": 60,
+            
+            # Maintenance & Errands
+            "shopping": 90, "grocery": 60, "errands": 120, "cleaning": 120,
+            "laundry": 90, "maintenance": 60, "repair": 90, "installation": 120,
+            "pickup": 15, "dropoff": 15, "delivery": 30,
+            
+            # Travel & Transportation
+            "flight": 180, "drive": 60, "commute": 30, "uber": 20,
+            "airport": 45, "travel": 120, "road trip": 480,
+            
+            # Entertainment & Recreation
+            "movie": 150, "concert": 180, "show": 120, "theater": 180,
+            "game": 120, "gaming": 180, "reading": 60, "book": 90,
+            "music": 60, "practice": 60, "hobby": 90
+        }
+        
+        # Find all matching keywords
+        matches = []
+        for keyword, duration in keyword_durations.items():
+            if keyword in text_lower:
+                matches.append(duration)
+        
+        # PHASE 3: Calculate result based on matches
+        if len(matches) > 1:
+            # Multiple matches - use weighted average
+            return round(sum(matches) / len(matches))
+        elif len(matches) == 1:
+            # Single match
+            return matches[0]
+        else:
+            # PHASE 4: Fallback - extract event type from legacy system
+            event_type = self._extract_event_type(text)
+            default_durations = {
+                'meeting': 60,
+                'call': 30,
+                'appointment': 45,
+                'lunch': 90,
+                'dinner': 120,
+                'coffee': 30
+            }
+            return default_durations.get(event_type, 60)
     
     def _calculate_voice_confidence(self, event_data: Dict[str, Any], text: str) -> float:
         """Calculate confidence score for voice-extracted event"""

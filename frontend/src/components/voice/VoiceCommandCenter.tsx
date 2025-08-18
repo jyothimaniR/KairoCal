@@ -8,6 +8,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { useVoice } from '../../hooks/useVoice';
 import { apiService } from '../../services/apiService';
+import { getPriorityLabel } from '../../utils/priorityUtils';
 
 interface VoiceCommandCenterProps {
   onEventCreated?: () => void;
@@ -62,10 +63,7 @@ const VoiceCommandCenter: React.FC<VoiceCommandCenterProps> = ({ onEventCreated 
         const displayEvent = {
           id: result.event_id,
           title: typeof ed.title === 'string' ? ed.title : transcript,
-          description:
-            typeof ed.description === 'string'
-              ? ed.description
-              : `Created via voice: ${transcript}`,
+          description: typeof ed.description === 'string' ? ed.description : undefined,
           priority_level: typeof ed.priority_level === 'number' ? ed.priority_level : lastResult.priority,
           created_via: 'voice' as const
         };
@@ -242,14 +240,22 @@ const VoiceCommandCenter: React.FC<VoiceCommandCenterProps> = ({ onEventCreated 
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div>
                     <span className="text-blue-700">Priority:</span>
-                    <span className={`ml-2 px-2 py-1 rounded text-xs ${
-                      lastResult.priority === 1 ? 'bg-red-100 text-red-800' :
-                      lastResult.priority === 2 ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-green-100 text-green-800'
-                    }`}>
-                      {lastResult.priority === 1 ? 'HIGH' : 
-                       lastResult.priority === 2 ? 'MEDIUM' : 'LOW'}
-                    </span>
+                    {(() => {
+                      const { label: priorityLabel, color: priorityColor } = getPriorityLabel(lastResult.priority);
+                      const bgColor = {
+                        red: 'bg-red-100 text-red-800',
+                        orange: 'bg-orange-100 text-orange-800',
+                        yellow: 'bg-yellow-100 text-yellow-800', 
+                        green: 'bg-green-100 text-green-800',
+                        gray: 'bg-gray-100 text-gray-800'
+                      }[priorityColor] || 'bg-gray-100 text-gray-800';
+                      
+                      return (
+                        <span className={`ml-2 px-2 py-1 rounded text-xs ${bgColor}`}>
+                          {priorityLabel}
+                        </span>
+                      );
+                    })()}
                   </div>
                   <div>
                     <span className="text-blue-700">Confidence:</span>

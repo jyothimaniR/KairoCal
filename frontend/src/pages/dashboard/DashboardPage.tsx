@@ -5,11 +5,13 @@ import {
   ExclamationTriangleIcon,
   ArrowPathIcon
 } from '@heroicons/react/24/outline';
-import { getPriorityLabel } from '../../utils/priorityUtils';
+import { getPriorityInfo } from '../../utils/priorityUtils';
+import { getEventIcon } from '../../utils/eventIconUtils';
 import UnifiedEventCreator from '../../components/voice/UnifiedEventCreator';
 import MiniCalendar from '../../components/calendar/MiniCalendar';
 import AnalyticsPanel from '../../components/analytics/AnalyticsPanel';
-import ConflictDetectionPanel from '../../components/conflicts/ConflictDetectionPanel';
+import PriorityConflictResolver from '../../components/conflicts/PriorityConflictResolver';
+import { PriorityChangeModal } from '../../components/modals/PriorityChangeModal';
 import { useDashboard } from '../../hooks/useDashboard';
 import { useSystemHealth } from '../../hooks/useSystemHealth';
 
@@ -65,6 +67,41 @@ const DashboardPage: React.FC = () => {
     }
   };
 
+  const handleChangePriority = (eventId: string, currentPriority: number, eventTitle: string) => {
+    setPriorityModalState({
+      isOpen: true,
+      eventId,
+      eventTitle,
+      currentPriority
+    });
+  };
+
+  const handlePriorityModalClose = () => {
+    setPriorityModalState({
+      isOpen: false,
+      eventId: null,
+      eventTitle: '',
+      currentPriority: 3
+    });
+  };
+
+  const handlePriorityModalSave = async (newPriority: number): Promise<boolean> => {
+    if (!priorityModalState.eventId) return false;
+    
+    try {
+      const success = await updateEventPriority(priorityModalState.eventId, newPriority);
+      if (success) {
+        // Refresh the data to show updated priority
+        await loadDashboardData();
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error updating priority:', error);
+      return false;
+    }
+  };
+
   // Calendar selection state
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
@@ -79,6 +116,19 @@ const DashboardPage: React.FC = () => {
   }, [events, selectedDate]);
 
   const [showAllDayEvents, setShowAllDayEvents] = useState(false);
+
+  // Priority change modal state
+  const [priorityModalState, setPriorityModalState] = useState<{
+    isOpen: boolean;
+    eventId: string | null;
+    eventTitle: string;
+    currentPriority: number;
+  }>({
+    isOpen: false,
+    eventId: null,
+    eventTitle: '',
+    currentPriority: 3
+  });
 
   const scheduleTitle = useMemo(() => {
     const today = new Date();
@@ -284,47 +334,42 @@ const DashboardPage: React.FC = () => {
                 </div>
               ) : (
                 (showAllDayEvents ? dayEvents : dayEvents.slice(0, 4)).map((event) => {
-                  const { label: priorityLabel, color: priorityColor } = getPriorityLabel(event.priority_level || 3);
+                  // PRIORITY FIX: Use getPriorityInfo instead of deprecated getPriorityLabel
+                  const priorityInfo = getPriorityInfo(event.priority_level || 3);
                   const startTime = new Date(event.start_time);
-                  const borderColor = {
-                    red: 'border-red-400',
-                    orange: 'border-orange-400', 
-                    yellow: 'border-yellow-400',
-                    green: 'border-green-400',
-                    gray: 'border-gray-400'
-                  }[priorityColor];
-                  
-                  const bgColor = {
-                    red: 'bg-red-100 text-red-800',
-                    orange: 'bg-orange-100 text-orange-800',
-                    yellow: 'bg-yellow-100 text-yellow-800', 
-                    green: 'bg-green-100 text-green-800',
-                    gray: 'bg-gray-100 text-gray-800'
-                  }[priorityColor];
+                  // EMOJI FIX: Get systematic event icon instead of hardcoded emojis
+                  const eventIcon = getEventIcon(event.title, (event as any).category);
 
                   return (
-                    <div key={event.id} className={`border-l-4 ${borderColor} pl-3 py-2`}>
+                    <div 
+                      key={event.id} 
+                      className={`border border-gray-200 rounded-lg p-3 mb-2 hover:shadow-md transition-shadow`}
+                      title="Click priority badge to change priority level"
+                    >
                       <div className="flex items-center justify-between">
-                        <div>
-                          <div className="font-medium text-sm">{event.title}</div>
+                        <div className="flex-1">
+                          <div className="flex items-center font-medium text-gray-900">
+                            <span className="mr-2 text-lg">{eventIcon}</span>
+                            {event.title}
+                          </div>
                           {(event.all_day || (event as any).is_all_day) ? (
-                            <div className="text-xs text-gray-500 flex items-center space-x-1">
-                              <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-gray-100 text-gray-700 border border-gray-200">Date-only</span>
-                              <span className="text-gray-400">No time set</span>
-                            </div>
+                            <div className="text-sm text-gray-500 mt-1">All Day Event</div>
                           ) : (
-                            <div className="text-xs text-gray-500">
-                              {startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            <div className="text-sm text-gray-500 mt-1">
+                              {startTime.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })} to{' '}
+                              {new Date(event.end_time).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })}
                             </div>
                           )}
                           {event.location && (
-                            <div className="text-xs text-gray-400">{event.location}</div>
+                            <div className="text-xs text-gray-400 mt-1">{event.location}</div>
                           )}
                         </div>
-                        <div className="text-xs">
-                          <span className={`px-2 py-1 rounded ${bgColor}`}>
-                            {priorityLabel}
-                          </span>
+                        <div className="text-right">
+                          <div className={`text-sm font-medium mb-1 px-2 py-1 rounded-full ${priorityInfo.bgColor} ${priorityInfo.textColor} cursor-pointer hover:opacity-75`}
+                               title="Click to change priority"
+                               onClick={() => handleChangePriority(event.id!, event.priority_level || 3, event.title)}>
+                            {priorityInfo.label} ✏️
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -355,45 +400,7 @@ const DashboardPage: React.FC = () => {
       <AnalyticsPanel />
 
       {/* Smart Conflict Detection */}
-      <ConflictDetectionPanel />
-
-      {/* Smart Scheduling Suggestions */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className="bg-white rounded-xl p-6 shadow-sm border border-gray-200"
-      >
-        <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-          🧠 AI Scheduling Suggestions
-        </h2>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div className="border border-blue-200 rounded-lg p-4 bg-blue-50">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-blue-900">Optimal Focus Time</span>
-              <span className="text-xs text-blue-600">⭐ 95% match</span>
-            </div>
-            <p className="text-sm text-blue-800">Block 10:00-12:00 AM for deep work based on your productivity patterns</p>
-          </div>
-          
-          <div className="border border-green-200 rounded-lg p-4 bg-green-50">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-green-900">Meeting Buffer</span>
-              <span className="text-xs text-green-600">⭐ 88% recommended</span>
-            </div>
-            <p className="text-sm text-green-800">Add 15-min buffer between meetings to reduce stress</p>
-          </div>
-          
-          <div className="border border-purple-200 rounded-lg p-4 bg-purple-50">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-purple-900">Priority Reshuffling</span>
-              <span className="text-xs text-purple-600">⭐ 92% beneficial</span>
-            </div>
-            <p className="text-sm text-purple-800">Move "Code Review" to 2:00 PM when you're most analytical</p>
-          </div>
-        </div>
-      </motion.div>
+      <PriorityConflictResolver />
 
       {/* Recent Activity */}
       <motion.div
@@ -474,6 +481,15 @@ const DashboardPage: React.FC = () => {
           </div>
         </motion.div>
       )}
+
+      {/* Priority Change Modal */}
+      <PriorityChangeModal
+        isOpen={priorityModalState.isOpen}
+        onClose={handlePriorityModalClose}
+        currentPriority={priorityModalState.currentPriority}
+        eventTitle={priorityModalState.eventTitle}
+        onSave={handlePriorityModalSave}
+      />
     </div>
   );
 };

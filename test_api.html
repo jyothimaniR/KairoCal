@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Test</title>
+</head>
+<body>
+    <h1>KairoCal API Test</h1>
+    <div id="output"></div>
+    
+    <script>
+        async function testAPI() {
+            const output = document.getElementById('output');
+            output.innerHTML = 'Testing API connection...<br>';
+            
+            try {
+                const response = await fetch('http://127.0.0.1:8000/api/v1/events?cognito_sub=frontend-test-user');
+                output.innerHTML += `Status: ${response.status}<br>`;
+                
+                if (response.ok) {
+                    const events = await response.json();
+                    output.innerHTML += `Events loaded: ${events.length}<br>`;
+                    
+                    events.forEach((event, index) => {
+                        output.innerHTML += `${index + 1}. ${event.title} - Priority: ${event.priority_level} - Time: ${event.start_time}<br>`;
+                    });
+                } else {
+                    output.innerHTML += `Error: ${response.statusText}<br>`;
+                }
+            } catch (error) {
+                output.innerHTML += `Exception: ${error.message}<br>`;
+            }
+        }
+        
+        // Test on page load
+        testAPI();
+    </script>
+</body>
+</html>

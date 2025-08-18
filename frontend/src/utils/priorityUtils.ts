@@ -1,6 +1,7 @@
 /**
  * Centralized Priority System for KairoCal
  * Ensures consistent priority mapping across all components
+ * STANDARDIZED TO BERT SCALE: 1 (VERY LOW) to 5 (CRITICAL)
  */
 
 export interface PriorityInfo {
@@ -12,24 +13,24 @@ export interface PriorityInfo {
 }
 
 /**
- * Standard priority scale: 1 (CRITICAL) to 5 (VERY LOW) 
- * NOTE: BERT model returns high numbers for high priority (CEO=5), but UI expects 1=highest
- * So we invert: BERT 5 -> UI 1, BERT 4 -> UI 2, etc.
+ * BERT Standard Priority Scale: 1 (VERY LOW) to 5 (CRITICAL)
+ * This matches the BERT model output exactly - no conversion needed
+ * BERT assigns priority 5 to critical events like "URGENT emergency meeting with CEO"
  */
 export const PRIORITY_MAPPING: Record<number, PriorityInfo> = {
   1: {
     level: 1,
-    label: 'CRITICAL',
-    color: 'red',
-    bgColor: 'bg-red-100',
-    textColor: 'text-red-800'
+    label: 'VERY LOW',
+    color: 'green',
+    bgColor: 'bg-green-100',
+    textColor: 'text-green-800'
   },
   2: {
     level: 2, 
-    label: 'HIGH',
-    color: 'orange',
-    bgColor: 'bg-orange-100',
-    textColor: 'text-orange-800'
+    label: 'LOW',
+    color: 'blue',
+    bgColor: 'bg-blue-100',
+    textColor: 'text-blue-800'
   },
   3: {
     level: 3,
@@ -40,46 +41,42 @@ export const PRIORITY_MAPPING: Record<number, PriorityInfo> = {
   },
   4: {
     level: 4,
-    label: 'LOW',
-    color: 'blue', 
-    bgColor: 'bg-blue-100',
-    textColor: 'text-blue-800'
+    label: 'HIGH',
+    color: 'orange', 
+    bgColor: 'bg-orange-100',
+    textColor: 'text-orange-800'
   },
   5: {
     level: 5,
-    label: 'VERY LOW',
-    color: 'green',
-    bgColor: 'bg-green-100', 
-    textColor: 'text-green-800'
+    label: 'CRITICAL',
+    color: 'red',
+    bgColor: 'bg-red-100', 
+    textColor: 'text-red-800'
   }
 };
 
 /**
- * Convert BERT priority (1-5, high number = high priority) to UI priority (1-5, low number = high priority)
- */
-export const convertBertPriorityToUI = (bertPriority: number): number => {
-  // Invert the scale: BERT 5 -> UI 1, BERT 4 -> UI 2, BERT 3 -> UI 3, BERT 2 -> UI 4, BERT 1 -> UI 5
-  return Math.max(1, Math.min(5, 6 - Math.floor(bertPriority || 3)));
-};
-
-/**
- * Get priority information for a given BERT priority level
- * @param bertPriority BERT Priority level (1-5, higher = more important)
+ * Get priority information for a given priority level (BERT standard)
+ * @param priority Priority level (1-5, where 5 is CRITICAL)
  * @param fallback Fallback priority if input is invalid
- * @returns PriorityInfo object
+ * @returns PriorityInfo object with BERT scale mapping
  */
-export const getPriorityInfo = (bertPriority: number | undefined | null, fallback: number = 3): PriorityInfo => {
-  const uiPriority = convertBertPriorityToUI(bertPriority || fallback);
-  return PRIORITY_MAPPING[uiPriority];
+export const getPriorityInfo = (priority: number | undefined | null, fallback: number = 3): PriorityInfo => {
+  // Normalize priority to valid range
+  const normalizedPriority = normalizePriority(priority || fallback);
+  
+  // Use BERT scale directly - no conversion needed
+  return PRIORITY_MAPPING[normalizedPriority];
 };
 
 /**
- * Get priority label only (legacy compatibility)
- * @param bertPriority BERT Priority level (1-5, higher = more important)
+ * Get priority label only (BERT standard)
+ * @param priority Priority level (1-5, where 5 is CRITICAL)
  * @returns Object with label and color
  */
-export const getPriorityLabel = (bertPriority: number): { label: string; color: string } => {
-  const info = getPriorityInfo(bertPriority);
+export const getPriorityLabel = (priority: number): { label: string; color: string } => {
+  const normalizedPriority = normalizePriority(priority);
+  const info = getPriorityInfo(normalizedPriority);
   return { label: info.label, color: info.color };
 };
 
@@ -99,8 +96,8 @@ export const normalizePriority = (priority: number | string | undefined | null):
 };
 
 /**
- * Format priority for display with confidence
- * @param priority Priority level
+ * Format priority for display with confidence (BERT standard)
+ * @param priority Priority level (1-5, where 5 is CRITICAL)
  * @param confidence Confidence score (0-1)
  * @returns Formatted string
  */
@@ -111,8 +108,8 @@ export const formatPriorityWithConfidence = (priority: number, confidence: numbe
 };
 
 /**
- * Get CSS classes for priority styling
- * @param priority Priority level
+ * Get CSS classes for priority styling (BERT standard)
+ * @param priority Priority level (1-5, where 5 is CRITICAL)
  * @returns Object with CSS classes
  */
 export const getPriorityClasses = (priority: number) => {

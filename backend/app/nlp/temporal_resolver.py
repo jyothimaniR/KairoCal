@@ -11,8 +11,19 @@ class TemporalResolver:
     """Converts human temporal expressions to datetime objects"""
     
     def __init__(self, current_time: Optional[datetime] = None, tz: str = "UTC"):
-        self.current_time = current_time or datetime.now(timezone.utc)
-        self.timezone = timezone.utc  # Simplified to UTC for now
+        # ANCHORED TIME PARSING FIX: Prevent day rollover drift near midnight
+        # This addresses the documented issue where "parsing times near midnight incorrectly shifting dates"
+        # Solution: Use local time for date calculations, but keep timezone-aware for storage
+        if current_time is None:
+            # Get local time for proper date context
+            local_now = datetime.now()
+            # Store both local context and UTC reference
+            self.current_time = local_now
+            self._utc_time = datetime.now(timezone.utc)
+        else:
+            self.current_time = current_time
+            self._utc_time = current_time.astimezone(timezone.utc) if current_time.tzinfo else current_time.replace(tzinfo=timezone.utc)
+        self.timezone = timezone.utc  # Keep UTC for storage consistency
         
         # Default durations for different event types (in minutes)
         self.default_durations = {
@@ -224,12 +235,12 @@ class TemporalResolver:
             time_obj: Time component
             
         Returns:
-            Combined datetime object
+            Combined datetime object (timezone-naive for local time)
         """
         if not date_obj and not time_obj:
             return None
         
-        # Use current date if no date specified
+        # Use current date if no date specified (but use local time, not UTC)
         if not date_obj:
             date_obj = self.current_time.replace(hour=0, minute=0, second=0, microsecond=0)
         
@@ -240,10 +251,8 @@ class TemporalResolver:
         # Combine date and time
         combined = datetime.combine(date_obj.date(), time_obj)
         
-        # Ensure timezone awareness
-        if combined.tzinfo is None:
-            combined = combined.replace(tzinfo=timezone.utc)
-        
+        # TIMEZONE FIX: Return timezone-naive datetime representing local time
+        # This prevents SQLAlchemy from doing incorrect timezone conversions
         return combined
     
     def resolve_full_temporal(self, date_text: str, time_text: str, 

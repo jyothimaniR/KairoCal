@@ -124,7 +124,15 @@ def check_conflicts(
         if engine_norm is None:
             raise HTTPException(status_code=400, detail=f"Unsupported engine '{engine}'. Use 'basic_v1' or 'fallback'.")
 
-    # Normalize request datetimes to naive UTC (strip tzinfo) for consistent comparisons
+        # 🔧 CRITICAL FIX: All-day events should never conflict with anything
+        # If the proposed event is all-day, return no conflicts immediately
+        if conflict_request.is_all_day:
+            print(f"🔍 DEBUG: Proposed event is all-day - returning no conflicts")
+            return ConflictCheckWrappedResponse(
+                conflicts=[], 
+                engine=engine_norm,
+                correlation_id=_current_correlation_id()
+            )    # Normalize request datetimes to naive UTC (strip tzinfo) for consistent comparisons
         from datetime import timedelta
         def _naive(dt: datetime) -> datetime:
             return dt.replace(tzinfo=None)
@@ -621,47 +629,11 @@ def smart_reschedule_event(
         # Calculate event duration
         duration_minutes = int((event.end_time - event.start_time).total_seconds() / 60)
         
-        # EMERGENCY FIX: Use simple, direct slot finding instead of complex analyzer
-        # This ensures we find obvious available times today/tomorrow first
-        
+        # Use simple, priority-based slot finding
+        # This focuses on conflict-free times with BERT priority analysis
         conflict_free_alternatives = _find_simple_available_slots(
             user, event, duration_minutes, max_alternatives, db
         )
-        
-        # Fallback to original method if simple method fails
-        if not conflict_free_alternatives:
-            # Initialize behavior analyzer
-            from app.nlp.user_behavior_analytics import UserBehaviorAnalyzer
-            analyzer = UserBehaviorAnalyzer(db)
-
-            # Generate smart alternatives using analyzer
-            reference_dt = preferred_date or event.start_time
-            suggestions = analyzer.suggest_optimal_time_slots(
-                user_id=str(user.id),
-                event_duration=duration_minutes,
-                preferred_date=reference_dt,
-                num_suggestions=max_alternatives * 2,
-            )
-            
-            # Filter with no buffer
-            for s in suggestions:
-                overlap_count = db.query(Event).filter(
-                    Event.user_id == user.id,
-                    Event.id != event.id,
-                    Event.start_time < s.end_time,
-                    Event.end_time > s.start_time,
-                ).count()
-                
-                if overlap_count == 0:
-                    conflict_free_alternatives.append(TimeSlotAlternative(
-                        start_time=s.start_time,
-                        end_time=s.end_time,
-                        confidence=s.confidence_score,
-                        reasoning=s.reason,
-                        productivity_score=None,
-                    ))
-                if len(conflict_free_alternatives) >= max_alternatives:
-                    break
         
         # Convert to response format
         return {
@@ -861,3 +833,64 @@ def _suggest_alternatives_basic_v1(
         if len(alts) >= max_alternatives:
             break
     return alts
+
+@router.put("/event/{event_id}/priority")
+async def update_event_priority(
+    event_id: str,
+    cognito_sub: str,
+    new_priority: int = Query(..., ge=1, le=5, description="New priority level (1=Very Low, 5=Critical)"),
+    db: Session = Depends(get_db)
+):
+    """
+    Update the priority of an event from the conflicts page
+    This allows users to fix priority conflicts by adjusting event priorities
+    """
+    try:
+        user = get_user_from_cognito(cognito_sub, db)
+        
+        # Find the event
+        event = db.query(Event).filter(
+            Event.id == event_id,
+            Event.user_id == user.id
+        ).first()
+        
+        if not event:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Event not found or you don't have permission to modify it"
+            )
+        
+        old_priority = event.priority_level
+        
+        # Update priority
+        event.priority_level = new_priority
+        event.priority_confidence = 0.95  # High confidence for manual updates
+        event.classification_method = 'manual_conflict_resolution'
+        event.updated_at = datetime.now()
+        
+        db.commit()
+        db.refresh(event)
+        
+        log.info(f"🔧 Event priority updated: '{event.title}' from P{old_priority} to P{new_priority}")
+        
+        return {
+            "success": True,
+            "message": f"Priority updated from {old_priority} to {new_priority}",
+            "event": {
+                "id": event.id,
+                "title": event.title,
+                "old_priority": old_priority,
+                "new_priority": new_priority,
+                "confidence": event.priority_confidence,
+                "method": event.classification_method
+            }
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        log.error(f"❌ Priority update failed: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to update priority: {str(e)}"
+        )

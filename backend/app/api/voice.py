@@ -59,6 +59,7 @@ class VoiceCreateEventRequest(BaseModel):
     user_id: Union[str, uuid.UUID] = Field(..., description="User ID (UUID) for event creation")
     auto_schedule: bool = Field(True, description="Automatically schedule if time is detected")
     priority_override: Optional[int] = Field(None, ge=1, le=5, description="Manual priority override (1-5)")
+    duration_preference: Optional[Union[str, int]] = Field(None, description="Duration preference: 'smart' or fixed minutes (30, 60, 90, 120)")
     
     @validator('voice_text')
     def validate_voice_text(cls, v):
@@ -243,7 +244,7 @@ async def create_event_from_voice(
         
         # Step 2: NLP Processing with voice-specific enhancements
         nlp_service = NLPService()
-        nlp_result = await nlp_service.process_voice_input(cleaned_text)
+        nlp_result = await nlp_service.process_voice_input(cleaned_text, request.duration_preference)
 
         # Step 4: Resolve temporal info (date/time) with TemporalResolver for tz-aware, AM/PM-correct times
         # Extract simple date/time candidates from cleaned_text and normalize AM/PM variants
@@ -297,7 +298,8 @@ async def create_event_from_voice(
                 "schedule", "meeting", "call", "submit", "send", "review", "remind",
                 "appointment", "task", "deadline", "set up", "setup", "arrange",
                 "organize", "plan", "book", "meet", "lunch", "dinner", "interview",
-                "class", "lesson"
+                "class", "lesson", "coffee", "break", "session", "training",
+                "workshop", "presentation", "conference", "seminar"
             ]
             t = text.lower()
             return any(k in t for k in kw)
@@ -369,24 +371,23 @@ async def create_event_from_voice(
             bert_priority, bert_confidence = bert_model.predict(event_for_bert)
             logger.info(f"🤖 BERT Classification: Priority {bert_priority}, Confidence {bert_confidence:.3f}")
 
-            # HYBRID DECISION: Use the higher priority between NLP enhanced and BERT
-            # This ensures critical keywords (CEO, surgery) are never downgraded
-            if nlp_priority >= 4 and nlp_priority > bert_priority:
-                # Trust enhanced NLP for high-priority events (CEO, surgery, emergency)
+            # FIXED HYBRID DECISION: Always trust BERT for high-confidence predictions
+            # This prevents keyword-based overrides from corrupting BERT's semantic understanding
+            if bert_confidence >= 0.7:
+                # Trust BERT for high-confidence predictions (confidence >= 0.7)
+                final_priority = bert_priority
+                hybrid_confidence = bert_confidence
+                logger.info(f"🎯 HYBRID: Using BERT priority {bert_priority} (high confidence: {bert_confidence:.3f})")
+            elif nlp_priority >= 4 and nlp_priority > bert_priority:
+                # Only use NLP for critical events (CEO, surgery, emergency) when BERT confidence is low
                 final_priority = nlp_priority
                 hybrid_confidence = 0.9  # High confidence in keyword-based detection
                 logger.info(f"🎯 HYBRID: Using enhanced NLP priority {nlp_priority} (keyword-based critical event)")
-            elif bert_confidence >= 0.7 and bert_priority >= nlp_priority:
-                # Trust BERT for high-confidence predictions
-                final_priority = bert_priority
-                hybrid_confidence = bert_confidence
-                logger.info(f"🎯 HYBRID: Using BERT priority {bert_priority} (high confidence)")
             else:
-                # Use weighted average for moderate cases
-                final_priority = round((nlp_priority * 0.6) + (bert_priority * 0.4))
-                final_priority = max(1, min(5, final_priority))  # Ensure valid range
-                hybrid_confidence = (0.8 + bert_confidence) / 2
-                logger.info(f"🎯 HYBRID: Using weighted priority {final_priority} (NLP: {nlp_priority}, BERT: {bert_priority})")
+                # Use BERT as primary, with slight NLP influence for very low confidence
+                final_priority = bert_priority
+                hybrid_confidence = max(0.6, bert_confidence)
+                logger.info(f"🎯 HYBRID: Using BERT priority {bert_priority} (primary classification)")
         else:
             # Fallback to enhanced NLP-based priority
             final_priority = nlp_priority
@@ -412,14 +413,21 @@ async def create_event_from_voice(
         start_dt_resolved: Optional[datetime] = None
         end_dt_resolved: Optional[datetime] = None
 
+        # Extract duration from NLP result to pass to temporal resolver
+        nlp_duration_minutes = nlp_result.get('duration', 60)
+        duration_text = f"{nlp_duration_minutes} minutes" if nlp_duration_minutes else None
+        logger.info(f"⏱️ Passing duration to temporal resolver: {duration_text}")
+
         try:
             start_dt_resolved, end_dt_resolved = resolver.resolve_full_temporal(
                 date_text=date_token or "",
                 time_text=time_token or "",
-                duration_text=None,
+                duration_text=duration_text,
                 event_type=nlp_result.get('event_type', 'default')
             )
-        except Exception:
+            logger.info(f"🔧 Temporal resolver result - Start: {start_dt_resolved}, End: {end_dt_resolved}")
+        except Exception as e:
+            logger.warning(f"⚠️ Temporal resolver failed: {e}")
             # Fallback handled below
             start_dt_resolved, end_dt_resolved = None, None
 
@@ -466,31 +474,99 @@ async def create_event_from_voice(
                 )
             
             # Prefer resolver times if available; otherwise fall back to NLP times (parsed)
-            nlp_start = _parse_dt(nlp_result.get('start_time'))
-            nlp_end = _parse_dt(nlp_result.get('end_time'))
 
+            # Use NLP's start_time and end_time if present and valid, fallback only if both missing
+            nlp_start = nlp_result.get('start_time')
+            nlp_end = nlp_result.get('end_time')
+            logger.info(f"[DEBUG] NLP start_time: {nlp_start} (type: {type(nlp_start)})")
+            logger.info(f"[DEBUG] NLP end_time: {nlp_end} (type: {type(nlp_end)})")
+            # Convert to datetime if string
+            if isinstance(nlp_start, str):
+                try:
+                    nlp_start = datetime.fromisoformat(nlp_start.replace('Z', '+00:00'))
+                except Exception:
+                    logger.warning(f"[DEBUG] Failed to parse nlp_start: {nlp_start}")
+                    nlp_start = None
+            if isinstance(nlp_end, str):
+                try:
+                    nlp_end = datetime.fromisoformat(nlp_end.replace('Z', '+00:00'))
+                except Exception:
+                    logger.warning(f"[DEBUG] Failed to parse nlp_end: {nlp_end}")
+                    nlp_end = None
+
+            logger.info(f"⏱️ Duration already extracted: {nlp_duration_minutes} minutes")
+
+            # Priority: resolver > NLP > fallback
             start_time_dt = start_dt_resolved or nlp_start or datetime.now()
+            # Robustly use NLP's end_time if present, or calculate from duration if possible
             if end_dt_resolved is not None:
                 end_time_dt = end_dt_resolved
-            elif nlp_end is not None:
+                logger.info(f"🕐 Using temporal resolver end time: {end_time_dt}")
+            elif nlp_end is not None and nlp_start is not None:
                 end_time_dt = nlp_end
+                logger.info(f"🕐 Using NLP end time: {end_time_dt}")
+            elif nlp_start is not None and nlp_duration_minutes:
+                end_time_dt = nlp_start + timedelta(minutes=nlp_duration_minutes)
+                logger.info(f"🕐 Calculated end time from NLP start + duration: {end_time_dt}")
             else:
-                # Safe default 1h duration
-                end_time_dt = start_time_dt + timedelta(hours=1)
+                # Fallback: use now + duration
+                end_time_dt = start_time_dt + timedelta(minutes=nlp_duration_minutes or 60)
+                logger.info(f"🕐 Fallback: Calculated end time using duration fallback: {end_time_dt}")
 
-            # If there is scheduling intent but no explicit time (date-only or broad period), mark as all-day
+            # Your original logic with warning for edge case:
+            # 1. Has start time + duration → Use both ✅
+            # 2. Has start time, no duration → Use start time + default duration ✅  
+            # 3. No start time → All-day event ✅
+            # 4. Special case: No start time but has specific duration → Show warning
+            
+            has_specific_duration = nlp_duration_minutes and nlp_duration_minutes != 60  # Not default
             is_all_day = False
+            warning_message = None
+            
             if scheduling_intent and not has_time:
-                # Anchor start/end to day bounds
+                if has_specific_duration:
+                    # Special case: No start time but has specific duration → Warning + All-day
+                    warning_message = f"⚠️ Duration specified ({nlp_duration_minutes} min) but no start time provided. Please specify start time for better scheduling. Creating as all-day event."
+                    logger.warning(warning_message)
+                
+                # No start time mentioned → All-day task (regardless of duration)
                 day_anchor = start_time_dt
                 start_time_dt = day_anchor.replace(hour=0, minute=0, second=0, microsecond=0)
                 end_time_dt = start_time_dt + timedelta(hours=23, minutes=59)
                 is_all_day = True
+                logger.info(f"📅 Creating all-day event (no start time specified)")
+            else:
+                # Has start time → Use duration (specified or default)
+                logger.info(f"⏰ Event has start time, using duration: {nlp_duration_minutes} minutes")
+
+            # Create proper description with location and duration info
+            description_parts = []
+            if nlp_result.get('location'):
+                description_parts.append(f"Location: {nlp_result.get('location')}")
+            if nlp_duration_minutes and nlp_duration_minutes != 60:  # Only show if not default
+                if nlp_duration_minutes >= 60:
+                    hours = nlp_duration_minutes // 60
+                    remaining_minutes = nlp_duration_minutes % 60
+                    if remaining_minutes > 0:
+                        duration_str = f"{hours}h {remaining_minutes}m"
+                    else:
+                        duration_str = f"{hours}h"
+                else:
+                    duration_str = f"{nlp_duration_minutes}m"
+                description_parts.append(f"Duration: {duration_str}")
+            
+            # Create description
+            if description_parts:
+                description = " | ".join(description_parts)
+            else:
+                description = f"Created from voice input"
 
             # Create event object
+
+            logger.info(f"[DEBUG] About to create Event: start_time={start_time_dt}, end_time={end_time_dt}, duration={(end_time_dt-start_time_dt).total_seconds()/60 if start_time_dt and end_time_dt else 'N/A'} min")
             event_data = {
                 'title': nlp_result.get('title', 'Voice Event'),
-                'description': f"Created from voice: {request.voice_text}",
+                'description': description,
                 'start_time': start_time_dt,
                 'end_time': end_time_dt,
                 'location': nlp_result.get('location', ''),
@@ -503,15 +579,21 @@ async def create_event_from_voice(
                 'created_at': datetime.now(),
                 'updated_at': datetime.now()
             }
-            
             new_event = Event(**event_data)
             db.add(new_event)
             db.commit()
             db.refresh(new_event)
+            logger.info(f"[DEBUG] Created Event in DB: start_time={new_event.start_time}, end_time={new_event.end_time}, duration={(new_event.end_time-new_event.start_time).total_seconds()/60 if new_event.start_time and new_event.end_time else 'N/A'} min")
             
             event_created = True
             event_id = str(new_event.id)  # Convert UUID to string for response
-            message = f"✅ Event created successfully from voice input with priority {final_priority}"
+            
+            # Include warning message if applicable
+            base_message = f"✅ Event created successfully from voice input with priority {final_priority}"
+            if warning_message:
+                message = f"{base_message}\n\n{warning_message}"
+            else:
+                message = base_message
             
             logger.info(f"📅 Event created with ID: {event_id}")
             

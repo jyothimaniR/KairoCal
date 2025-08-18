@@ -12,6 +12,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { useVoice } from '../../hooks/useVoice';
 import { useSystemHealth } from '../../hooks/useSystemHealth';
+import UserButton from './UserButton';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -164,10 +165,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 </div>
                 <span className="text-purple-600 font-medium">📊 87%</span>
               </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-gray-300 rounded-full"></div>
-                <span className="text-sm font-medium text-gray-700">John Doe</span>
-              </div>
+              <UserButton 
+                isVoiceHealthy={isVoiceHealthy}
+              />
             </div>
           </div>
         </header>

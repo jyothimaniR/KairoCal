@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Duration Preference Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
+        button { margin: 5px; padding: 8px 16px; }
+        .result { margin: 10px 0; padding: 10px; background: #f5f5f5; border-radius: 3px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Duration Preference Test</h1>
+    
+    <div class="test-section">
+        <h3>1. Set Duration Preference</h3>
+        <button onclick="setPreference('smart')">Set Smart Duration</button>
+        <button onclick="setPreference(30)">Set 30 minutes</button>
+        <button onclick="setPreference(60)">Set 1 hour</button>
+        <button onclick="setPreference(90)">Set 1.5 hours</button>
+        <button onclick="setPreference(120)">Set 2 hours</button>
+        <div id="preference-result" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>2. Check Current Preference</h3>
+        <button onclick="checkPreference()">Check Current Setting</button>
+        <div id="check-result" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>3. Test Voice API with Current Preference</h3>
+        <input type="text" id="voice-text" placeholder="Enter voice command" value="Movie With My Girlfriend tomorrow at 7pm" style="width: 300px;">
+        <button onclick="testVoiceAPI()">Test Voice API</button>
+        <div id="voice-result" class="result"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000/api/v1';
+        
+        function setPreference(value) {
+            try {
+                const preferences = {
+                    user_name: 'Test User',
+                    default_event_duration: value,
+                    preferred_meeting_length: value === 'smart' ? 'smart' : `${value}min`,
+                    updated_at: new Date().toISOString()
+                };
+                
+                localStorage.setItem('user-preferences', JSON.stringify(preferences));
+                
+                document.getElementById('preference-result').innerHTML = 
+                    `<div class="success">✅ Preference set to: ${value} ${typeof value === 'number' ? 'minutes' : ''}</div>`;
+                    
+            } catch (error) {
+                document.getElementById('preference-result').innerHTML = 
+                    `<div class="error">❌ Error setting preference: ${error.message}</div>`;
+            }
+        }
+        
+        function checkPreference() {
+            try {
+                const stored = localStorage.getItem('user-preferences');
+                if (stored) {
+                    const preferences = JSON.parse(stored);
+                    document.getElementById('check-result').innerHTML = 
+                        `<div class="success">Current preference: ${preferences.default_event_duration}</div>
+                         <pre>${JSON.stringify(preferences, null, 2)}</pre>`;
+                } else {
+                    document.getElementById('check-result').innerHTML = 
+                        `<div class="error">No preferences found in localStorage</div>`;
+                }
+            } catch (error) {
+                document.getElementById('check-result').innerHTML = 
+                    `<div class="error">❌ Error checking preference: ${error.message}</div>`;
+            }
+        }
+        
+        async function testVoiceAPI() {
+            const voiceText = document.getElementById('voice-text').value;
+            const resultDiv = document.getElementById('voice-result');
+            
+            if (!voiceText.trim()) {
+                resultDiv.innerHTML = '<div class="error">Please enter voice text</div>';
+                return;
+            }
+            
+            try {
+                resultDiv.innerHTML = '<div>🔄 Testing...</div>';
+                
+                // Get current preference
+                let durationPreference = 'smart';
+                const stored = localStorage.getItem('user-preferences');
+                if (stored) {
+                    const preferences = JSON.parse(stored);
+                    durationPreference = preferences.default_event_duration || 'smart';
+                }
+                
+                console.log('Using duration preference:', durationPreference);
+                
+                // Call voice API
+                const response = await fetch(`${API_BASE}/voice/create-event`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        voice_text: voiceText,
+                        user_id: 'frontend-test-user',
+                        auto_schedule: true,
+                        duration_preference: durationPreference
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                // Calculate duration
+                let durationInfo = '';
+                if (data.event_data && data.event_data.start_time && data.event_data.end_time) {
+                    const start = new Date(data.event_data.start_time);
+                    const end = new Date(data.event_data.end_time);
+                    const durationMinutes = Math.round((end - start) / (1000 * 60));
+                    durationInfo = `<div><strong>Calculated Duration:</strong> ${durationMinutes} minutes</div>`;
+                }
+                
+                resultDiv.innerHTML = 
+                    `<div class="success">✅ API call successful!</div>
+                     <div><strong>Preference Used:</strong> ${durationPreference}</div>
+                     ${durationInfo}
+                     <div><strong>Event Title:</strong> ${data.event_data?.title || 'N/A'}</div>
+                     <div><strong>Success:</strong> ${data.success}</div>
+                     <pre>${JSON.stringify(data, null, 2)}</pre>`;
+                     
+            } catch (error) {
+                resultDiv.innerHTML = 
+                    `<div class="error">❌ Error: ${error.message}</div>`;
+                console.error('Voice API test failed:', error);
+            }
+        }
+        
+        // Auto-check preference on load
+        window.onload = function() {
+            checkPreference();
+        };
+    </script>
+</body>
+</html>
