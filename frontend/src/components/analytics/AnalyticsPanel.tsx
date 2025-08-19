@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { 
   ChartBarIcon,
@@ -11,12 +11,16 @@ import {
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { apiService } from '../../services/apiService';
 import { getPriorityInfo } from '../../utils/priorityUtils';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface AnalyticsPanelProps {
   className?: string;
 }
 
 const AnalyticsPanel: React.FC<AnalyticsPanelProps> = ({ className = '' }) => {
+  const { user } = useAuth();
+  const userId = user?.uid || 'frontend-test-user';
+  
   const [priorityTrends, setPriorityTrends] = useState<any>(null);
   const [bertPerformance, setBertPerformance] = useState<any>(null);
   const [productivityMetrics, setProductivityMetrics] = useState<any>(null);
@@ -24,14 +28,16 @@ const AnalyticsPanel: React.FC<AnalyticsPanelProps> = ({ className = '' }) => {
   const [error, setError] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const loadAnalytics = async () => {
+  const loadAnalytics = useCallback(async () => {
     try {
       setError(null);
       if (!isRefreshing) setIsLoading(true);
 
+      console.log('� Loading analytics data...');
+
       const [trends, performance, productivity] = await Promise.all([
-        apiService.getPriorityTrends(),
-        apiService.getBertPerformance(),
+        apiService.getPriorityTrends(userId),
+        apiService.getBertPerformance(userId),
         // Use fallback data if productivity endpoint fails
         apiService.getProductivityMetrics().catch(() => null)
       ]);
@@ -46,11 +52,11 @@ const AnalyticsPanel: React.FC<AnalyticsPanelProps> = ({ className = '' }) => {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  };
+  }, [userId, isRefreshing]);
 
   useEffect(() => {
     loadAnalytics();
-  }, []);
+  }, [loadAnalytics]); // Reload when user changes
 
   const handleRefresh = async () => {
     setIsRefreshing(true);

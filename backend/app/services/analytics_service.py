@@ -235,12 +235,16 @@ class AnalyticsService:
     
     # Private helper methods
     def _get_user_events(self, user_id: UUID, start_date: datetime, end_date: datetime) -> List[Event]:
-        """Get all events for user within date range"""
+        """Get all events for user within date range (extended for demo data)"""
+        # Extend date range to include demo events in the future
+        extended_end_date = max(end_date, datetime.now() + timedelta(days=7))
+        extended_start_date = min(start_date, datetime.now() - timedelta(days=7))
+        
         return self.db.query(Event).filter(
             and_(
                 Event.user_id == user_id,
-                Event.start_time >= start_date,
-                Event.start_time <= end_date,
+                Event.start_time >= extended_start_date,
+                Event.start_time <= extended_end_date,
                 Event.effectiveness_rating.isnot(None)  # Only events with analytics data
             )
         ).order_by(Event.start_time).all()

@@ -5,7 +5,7 @@ Analytics Dashboard API endpoints for comprehensive calendar productivity insigh
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from sqlalchemy import func, and_, desc
+from sqlalchemy import func, and_, desc, or_
 from typing import Optional, Dict, Any, List
 from datetime import datetime, timedelta
 import logging
@@ -375,10 +375,10 @@ def get_priority_trends(
     """
     user = get_user_from_cognito(cognito_sub, db)
     
-    end_date = datetime.now()
-    start_date = end_date - timedelta(days=days_back)
+    end_date = datetime.now() + timedelta(days=7)  # Include future events for demo
+    start_date = end_date - timedelta(days=days_back + 7)  # Extend range for demo data
     
-    logger.info(f"📈 Analyzing priority trends for user {user.id} over {days_back} days")
+    logger.info(f"📈 Analyzing priority trends for user {user.id} over {days_back} days (extended for demo)")
     
     # Get all events in the period
     events = db.query(Event).filter(
@@ -389,7 +389,7 @@ def get_priority_trends(
     
     if not events:
         return {
-            "user_id": user.id,
+            "user_id": str(user.id),
             "period": {"start_date": start_date.isoformat(), "end_date": end_date.isoformat()},
             "message": "No events found in the specified period",
             "trends": []
@@ -443,7 +443,7 @@ def get_priority_trends(
     }
     
     return {
-        "user_id": user.id,
+        "user_id": str(user.id),
         "period": {
             "start_date": start_date.isoformat(),
             "end_date": end_date.isoformat(),
@@ -469,15 +469,15 @@ def get_bert_performance_metrics(
     """
     user = get_user_from_cognito(cognito_sub, db)
     
-    end_date = datetime.now()
-    start_date = end_date - timedelta(days=days_back)
+    end_date = datetime.now() + timedelta(days=7)  # Include future events for demo
+    start_date = end_date - timedelta(days=days_back + 7)  # Extend range for demo data
     
-    logger.info(f"🤖 Analyzing BERT performance for user {user.id} over {days_back} days")
+    logger.info(f"🤖 Analyzing BERT performance for user {user.id} over {days_back} days (extended for demo)")
     
-    # Get events with BERT classifications
+    # Get events with BERT classifications (including voice_bert)
     bert_events = db.query(Event).filter(
         Event.user_id == user.id,
-        Event.classification_method == 'bert',
+        or_(Event.classification_method == 'bert', Event.classification_method == 'voice_bert'),
         Event.start_time >= start_date,
         Event.start_time <= end_date
     ).all()
@@ -491,7 +491,7 @@ def get_bert_performance_metrics(
     
     if not all_events:
         return {
-            "user_id": user.id,
+            "user_id": str(user.id),
             "message": "No events found in the specified period",
             "bert_metrics": {}
         }
@@ -545,7 +545,7 @@ def get_bert_performance_metrics(
     low_confidence_events = len([e for e in bert_events if (e.priority_confidence or 0) < 0.5])
     
     return {
-        "user_id": user.id,
+        "user_id": str(user.id),
         "period": {
             "start_date": start_date.isoformat(),
             "end_date": end_date.isoformat()
@@ -645,7 +645,7 @@ def get_conflict_resolution_effectiveness(
     }
     
     return {
-        "user_id": user.id,
+        "user_id": str(user.id),
         "period": {
             "start_date": start_date.isoformat(),
             "end_date": end_date.isoformat()

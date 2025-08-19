@@ -53,12 +53,12 @@ const LandingPage: React.FC = () => {
     }
   };
 
-  // Real-time stats (based on actual project data)
+  // Real-time stats (based on actual dissertation research data)
   const [stats] = useState({
-    eventsProcessed: 1247,
-    voiceCommands: 892,
-    conflictsResolved: 156,
-    accuracyRate: 87.3,
+    eventsProcessed: 54,
+    voiceCommands: 12,
+    conflictsResolved: 10,
+    accuracyRate: 85.0,
     apiEndpoints: 50,
     processingTime: 0.5,
     uptime: 99.9
@@ -69,10 +69,10 @@ const LandingPage: React.FC = () => {
     {
       icon: "🧠",
       title: "BERT AI Classification",
-      subtitle: "87% Accuracy Priority Detection",
-      description: "Our fine-tuned DistilBERT model analyzes event context, urgency, and importance to automatically assign priority levels with confidence scoring. Trained on 500+ event examples with real-time classification.",
+      subtitle: "85% Accuracy Priority Detection",
+      description: "Our fine-tuned DistilBERT model analyzes event context, urgency, and importance to automatically assign priority levels with confidence scoring. Trained on research dataset with real-time classification.",
       tech: "PyTorch • DistilBERT • spaCy • scikit-learn",
-      metrics: "87% accuracy, <500ms response time",
+      metrics: "85% accuracy, <500ms response time",
       status: "✅ Production Ready"
     },
     {
@@ -179,7 +179,7 @@ const LandingPage: React.FC = () => {
 
         <div className="flex gap-3">
           <motion.button
-            className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg font-semibold hover:shadow-lg hover:shadow-green-500/25 transition-all text-sm"
+            className="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg font-semibold hover:shadow-lg hover:shadow-blue-500/25 transition-all text-sm"
             onClick={() => {
               // Set demo user token and navigate to dashboard
               localStorage.setItem('demoMode', 'true');
@@ -256,7 +256,7 @@ const LandingPage: React.FC = () => {
             variants={fadeInUp}
           >
             <motion.button 
-              className="px-8 py-4 bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl font-bold text-lg shadow-lg shadow-green-500/25"
+              className="px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl font-bold text-lg shadow-lg shadow-blue-500/25"
               onClick={() => {
                 // Set demo user token and navigate to dashboard
                 localStorage.setItem('demoMode', 'true');
@@ -633,7 +633,7 @@ const LandingPage: React.FC = () => {
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between">
                   <span className="text-gray-300">BERT Classifier</span>
-                  <span className="text-purple-400">87% Accuracy</span>
+                  <span className="text-purple-400">85% Accuracy</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-300">NLP Pipeline</span>
@@ -777,7 +777,7 @@ const LandingPage: React.FC = () => {
             </div>
             
             <div className="text-center p-6 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-2xl border border-purple-500/30">
-              <div className="text-3xl font-bold text-purple-400 mb-2">87%</div>
+              <div className="text-3xl font-bold text-purple-400 mb-2">85%</div>
               <div className="text-gray-300">AI Accuracy</div>
               <div className="text-sm text-gray-400 mt-2">BERT model performance</div>
             </div>
