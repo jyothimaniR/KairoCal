@@ -4,6 +4,7 @@
  */
 
 import { API_V1 } from '../config/api';
+import { getCurrentUserId } from '../config/user';
 
 export interface Event {
   id?: string;

@@ -11,13 +11,8 @@ interface ProtectedRouteProps {
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const { user, loading } = useAuth();
 
-  // 🚀 DEVELOPMENT MODE: Bypass authentication for development
-  const isDevelopment = import.meta.env.DEV || window.location.hostname === 'localhost';
-  
-  if (isDevelopment) {
-    console.log('🔓 Development mode: Bypassing authentication');
-    return <>{children}</>;
-  }
+  // 🎪 DEMO MODE: Authentication enabled for demo
+  // Note: Removed development bypass to enable Firebase auth for demo
 
   if (loading) {
     return (

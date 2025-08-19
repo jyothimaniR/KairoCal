@@ -229,6 +229,9 @@ class NLPService:
             r'\b(tomorrow|today|yesterday|tonight|tonite)\b',
             r'\b(now|later|soon|asap|immediately)\b',
             
+            # FIXED: Add standalone "coming" to prevent contamination
+            r'\bcoming\b',
+            
             # Day references
             r'\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b',
             r'\b(mon|tue|wed|thu|fri|sat|sun)\b',
@@ -253,6 +256,16 @@ class NLPService:
             # Specific time patterns
             r'\b(at|on|for|by|until|before|after)\s+\d{1,2}(:\d{2})?\s*(am|pm|a\.?m\.?|p\.?m\.?)\b',
             r'\b(at|on|for|by|until|before|after)\s+(morning|afternoon|evening|night|noon|midnight)\b',
+            
+            # FIXED: Add standalone time patterns like "7pm", "7Pm" etc
+            r'\b\d{1,2}(:\d{2})?\s*(am|pm|a\.?m\.?|p\.?m\.?)\b',
+            r'\b\d{1,2}(am|pm|AM|PM|Am|Pm)\b',
+            
+            # ENHANCED: Location patterns to remove from title (more comprehensive)
+            r'\bat\s+[a-zA-Z][a-zA-Z\s]*$',  # Remove "at Location" from end of text
+            r'\bat\s+[a-zA-Z][a-zA-Z\s]*(?=\s+coming|\s+today|\s+tomorrow)',  # Remove "at Location" before temporal words
+            r'\bat\s+[a-zA-Z]+(?:\s+[a-zA-Z]+)*(?:\s|$)',  # Remove generic "at Location" patterns like "At Park"
+            r'\bin\s+[a-zA-Z][a-zA-Z\s]*(?:cafe|restaurant|park|room|office|building|center|centre|hall|library|gym|stadium|store|shop|hotel|bar|club)\b',  # Remove "in Place-type"
             
             # Date formats
             r'\b\d{1,2}/\d{1,2}(/\d{2,4})?\b',
@@ -500,25 +513,95 @@ class NLPService:
         for pattern in time_patterns_to_remove:
             clean_text = re.sub(pattern, '', clean_text, flags=re.IGNORECASE)
         
+        # FIXED: More precise location patterns that handle multiple "at" instances correctly
         location_patterns = [
-            r'(?:at|in|@)\s+([a-zA-Z][a-zA-Z\s]+?)(?:\s+(?:at|on|for|tomorrow|today|tonight)\s|\s*$)',
-            r'location\s+([a-zA-Z][a-zA-Z\s]+?)(?:\s+(?:at|on|for|tomorrow|today|tonight)\s|\s*$)',
-            r'room\s+([a-zA-Z0-9]+)',
-            r'conference room\s+([a-zA-Z0-9\s]+)',
-            r'building\s+([a-zA-Z][a-zA-Z\s]+?)(?:\s+(?:at|on|for|tomorrow|today|tonight)\s|\s*$)'
+            # ENHANCED: Look for location indicators followed by place-like words
+            r'(?:^|\s)(?:at|in|@)\s+([a-zA-Z][a-zA-Z0-9\s]*?)(?:\s+(?:coming|today|tomorrow|tonight|monday|tuesday|wednesday|thursday|friday|saturday|sunday|next|this|last)\b|\s*$)',
+            # Match explicit location references
+            r'location\s+([a-zA-Z][a-zA-Z0-9\s]*?)(?:\s+(?:coming|today|tomorrow|tonight|monday|tuesday|wednesday|thursday|friday|saturday|sunday|next|this|last|with|and|or)\b|\s*$)',
+            # Match specific room/building references (more restrictive)
+            r'(?:conference\s+)?room\s+([a-zA-Z0-9]+)(?:\s|$)',
+            r'building\s+([a-zA-Z][a-zA-Z0-9\s]*?)(?:\s+(?:coming|today|tomorrow|tonight|monday|tuesday|wednesday|thursday|friday|saturday|sunday|next|this|last|with|and|or)\b|\s*$)'
         ]
         
-        for pattern in location_patterns:
-            match = re.search(pattern, clean_text, re.IGNORECASE)
-            if match:
-                location = match.group(1).strip()
-                # Additional validation - avoid time-like strings
-                if (len(location) > 2 and 
-                    not re.match(r'^\d+\s*(am|pm|a\.?m\.?|p\.?m\.?)$', location, re.IGNORECASE) and
-                    not re.match(r'^\d+\s*(minute|min|hour|hr)', location, re.IGNORECASE)):
-                    return location.title()
+        # ENHANCED: More specific location patterns that handle multiple "at" instances correctly
+        location_patterns = [
+            # ENHANCED: Look for location indicators followed by place-like words
+            r'(?:^|\s)(?:at|in|@)\s+([a-zA-Z][a-zA-Z0-9\s]*?)(?:\s+(?:coming|today|tomorrow|tonight|monday|tuesday|wednesday|thursday|friday|saturday|sunday|next|this|last)\b|\s*$)',
+            # Match explicit location references
+            r'location\s+([a-zA-Z][a-zA-Z0-9\s]*?)(?:\s+(?:coming|today|tomorrow|tonight|monday|tuesday|wednesday|thursday|friday|saturday|sunday|next|this|last|with|and|or)\b|\s*$)',
+            # Match specific room/building references (more restrictive)
+            r'(?:conference\s+)?room\s+([a-zA-Z0-9]+)(?:\s|$)',
+            r'building\s+([a-zA-Z][a-zA-Z0-9\s]*?)(?:\s+(?:coming|today|tomorrow|tonight|monday|tuesday|wednesday|thursday|friday|saturday|sunday|next|this|last|with|and|or)\b|\s*$)'
+        ]
         
-        return None
+        # ENHANCED: Find all possible location matches first
+        all_potential_locations = []
+        
+        for pattern in location_patterns:
+            for match in re.finditer(pattern, clean_text, re.IGNORECASE):
+                location = match.group(1).strip()
+                start_pos = match.start()
+                
+                # Clean up the location first
+                cleaned_location = re.sub(r'\s+(coming|with|and|or).*$', '', location, flags=re.IGNORECASE).strip()
+                
+                # Store all potential matches for analysis
+                all_potential_locations.append({
+                    'location': cleaned_location,
+                    'start_pos': start_pos,
+                    'original': location
+                })
+        
+        # ENHANCED: Score and select the best location
+        best_location = None
+        best_score = -1
+        
+        for item in all_potential_locations:
+            cleaned_location = item['location']
+            start_pos = item['start_pos']
+            
+            # ENHANCED validation
+            validation_passed = True
+            
+            if (len(cleaned_location) > 1 and 
+                not re.match(r'^\d+\s*(am|pm|a\.?m\.?|p\.?m\.?)$', cleaned_location, re.IGNORECASE) and
+                not re.match(r'^\d+\s*(minute|min|hour|hr)', cleaned_location, re.IGNORECASE) and
+                not re.match(r'^(with\s+\w+|colleague|emma|friends)$', cleaned_location, re.IGNORECASE) and
+                # ENHANCED: Only reject person name patterns if they don't contain place indicators
+                not (re.match(r'^[A-Z][a-z]+\s+(and\s+)?[A-Z][a-z]+$', cleaned_location) and 
+                     not any(indicator in cleaned_location.lower() for indicator in ['cafe', 'restaurant', 'park', 'room', 'office', 'building', 'center', 'centre', 'hall', 'library', 'gym', 'stadium', 'store', 'shop', 'hospital', 'school', 'university', 'church', 'hotel', 'bar', 'club']))):
+                
+                # ENHANCED: Score locations based on how place-like they are
+                score = 0
+                place_indicators = ['cafe', 'restaurant', 'park', 'room', 'office', 'building', 'center', 'centre', 'hall', 'library', 'gym', 'stadium', 'store', 'shop', 'hospital', 'school', 'university', 'church', 'hotel', 'bar', 'club']
+                
+                # MUCH higher score for explicit place words
+                if any(indicator in cleaned_location.lower() for indicator in place_indicators):
+                    score += 200
+                
+                # Higher score for locations that come later in the text (rightmost)
+                score += start_pos * 0.1
+                
+                # MUCH LOWER score for locations with person indicators like "with"
+                if 'with' in item['original'].lower() or 'colleague' in item['original'].lower():
+                    score -= 100
+                
+                # Much higher score for capitalized place names (Liverpool Cafe vs with colleague)
+                capitalized_words = [word for word in cleaned_location.split() if word and word[0].isupper()]
+                if len(capitalized_words) >= 2:
+                    score += 150
+                
+                # Boost for common location patterns
+                if len(cleaned_location.split()) >= 2:  # Multi-word locations are more likely to be places
+                    score += 50
+                
+                # Select the highest scoring location
+                if score > best_score:
+                    best_location = cleaned_location.title()
+                    best_score = score
+        
+        return best_location
     
     def _extract_priority(self, text: str) -> int:
         """

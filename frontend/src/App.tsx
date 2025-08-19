@@ -10,6 +10,7 @@ import SearchPage from './pages/search/SearchPage'
 import ConflictsPage from './pages/conflicts/ConflictsPage'
 import AnalyticsPage from './pages/analytics/AnalyticsPage'
 import SettingsPage from './pages/SettingsPage'
+import ProtectedRoute from './components/auth/ProtectedRoute'
 import './App.css'
 
 function App() {
@@ -22,39 +23,53 @@ function App() {
         <Route path="/auth" element={<AuthPage />} />
         <Route path="/debug" element={<DebugDashboard />} />
         <Route path="/dashboard" element={
-          <Layout>
-            <DashboardPage />
-          </Layout>
+          <ProtectedRoute>
+            <Layout>
+              <DashboardPage />
+            </Layout>
+          </ProtectedRoute>
         } />
         <Route path="/calendar" element={
-          <Layout>
-            <CalendarPage />
-          </Layout>
+          <ProtectedRoute>
+            <Layout>
+              <CalendarPage />
+            </Layout>
+          </ProtectedRoute>
         } />
         <Route path="/voice" element={
-          <Layout>
-            <VoicePage />
-          </Layout>
+          <ProtectedRoute>
+            <Layout>
+              <VoicePage />
+            </Layout>
+          </ProtectedRoute>
         } />
         <Route path="/search" element={
-          <Layout>
-            <SearchPage />
-          </Layout>
+          <ProtectedRoute>
+            <Layout>
+              <SearchPage />
+            </Layout>
+          </ProtectedRoute>
         } />
         <Route path="/analytics" element={
-          <Layout>
-            <AnalyticsPage />
-          </Layout>
+          <ProtectedRoute>
+            <Layout>
+              <AnalyticsPage />
+            </Layout>
+          </ProtectedRoute>
         } />
         <Route path="/conflicts" element={
-          <Layout>
-            <ConflictsPage />
-          </Layout>
+          <ProtectedRoute>
+            <Layout>
+              <ConflictsPage />
+            </Layout>
+          </ProtectedRoute>
         } />
         <Route path="/settings" element={
-          <Layout>
-            <SettingsPage />
-          </Layout>
+          <ProtectedRoute>
+            <Layout>
+              <SettingsPage />
+            </Layout>
+          </ProtectedRoute>
         } />
         <Route path="/app" element={<Navigate to="/debug" replace />} />
       </Routes>

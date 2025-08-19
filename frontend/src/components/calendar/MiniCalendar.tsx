@@ -89,8 +89,8 @@ const MiniCalendar: React.FC<MiniCalendarProps> = ({ events, selectedDate, onSel
       </h3>
 
       <div className="grid grid-cols-7 gap-1 text-center text-xs">
-        {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d) => (
-          <div key={`dow-${d}`} className="p-2 text-gray-500 font-medium">{d}</div>
+        {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, index) => (
+          <div key={`dow-${index}`} className="p-2 text-gray-500 font-medium">{d}</div>
         ))}
 
         {gridDays.map(({ date, inMonth }) => {

@@ -18,6 +18,7 @@ export interface DashboardData {
 export const useDashboard = () => {
   const { user } = useAuth();
   const userId = useMemo(() => user?.uid || 'frontend-test-user', [user]);
+  
   const [data, setData] = useState<DashboardData>({
     events: [],
     todaysEvents: [],

@@ -42,105 +42,132 @@ const ConflictDetectionPanel: React.FC = () => {
   const detectConflicts = async () => {
     try {
       setIsLoading(true);
-      console.log('Starting conflict detection...');
+      console.log('🔍 Starting improved conflict detection...');
       
       // Get all events
       const events = await apiService.getEvents();
-      console.log(`Retrieved ${events.length} events`);
+      console.log(`📊 Retrieved ${events.length} events`);
 
       if (events.length < 2) {
-        console.log('Not enough events to detect conflicts');
+        console.log('⚠️ Not enough events to detect conflicts');
         setConflicts([]);
         return;
       }
 
-      // Check each event for conflicts with other events
+      // 🔧 MAJOR FIX: Use client-side conflict detection to avoid duplicates
+      // This ensures each conflict pair is detected only once
       const allDetectedConflicts: DetectedConflict[] = [];
-      
-      for (let i = 0; i < events.length; i++) {
-        const event = events[i];
-        
-        // 🔧 CRITICAL FIX: Skip all-day events entirely
+      const timeEvents = events.filter(event => {
         const isAllDay = (event as any).is_all_day || (event as any).all_day || false;
         if (isAllDay) {
-          console.log(`Skipping all-day event: ${event.title}`);
-          continue; // Skip to next event
+          console.log(`📅 Skipping all-day event: ${event.title}`);
+          return false;
         }
-        
-        try {
-          const payload = {
-            title: event.title,
-            start_time: event.start_time,
-            end_time: event.end_time,
-            description: event.description || '',
-            is_all_day: false // We already filtered out all-day events above
-          };
+        return true;
+      });
 
-          console.log(`Checking conflicts for: ${event.title}`);
-          const response = await apiService.conflictsCheck(payload);
+      console.log(`⏰ Checking ${timeEvents.length} time-based events for conflicts`);
 
-          if (response?.conflicts && response.conflicts.length > 0) {
-            // Transform each backend conflict to frontend format
-            for (const conflict of response.conflicts) {
-              const detectedConflict: DetectedConflict = {
-                id: conflict.conflict_id || `conflict-${Date.now()}-${Math.random()}`,
-                timeSlot: event.start_time,
-                events: [
-                  {
-                    id: event.id || 'unknown',
-                    title: event.title,
-                    start_time: event.start_time,
-                    end_time: event.end_time,
-                    priority_level: event.priority_level || 3
-                  },
-                  {
-                    id: conflict.affected_event_ids?.[0] || 'unknown-conflict',
-                    title: conflict.priority_analysis?.existing_event?.title || 'Conflicting Event',
-                    start_time: event.start_time,
-                    end_time: event.end_time,
-                    priority_level: conflict.priority_analysis?.existing_event?.priority || 3
-                  }
-                ],
-                severity: conflict.severity || 'medium',
-                suggestedResolution: conflict.description || 'Reschedule one of the conflicting events',
-                bertAnalysis: {
-                  confidence: conflict.ai_confidence || 0.9,
-                  reasoning: conflict.reasoning?.join(', ') || 'BERT AI detected scheduling conflict'
-                }
-              };
-              
-              // Avoid duplicates by checking if this exact conflict pair already exists
-              const eventTitle1 = event.title;
-              const eventTitle2 = conflict.priority_analysis?.existing_event?.title || 'Unknown';
-              
-              const isDuplicate = allDetectedConflicts.some(existing => {
-                const existingTitles = existing.events.map(e => e.title).sort();
-                const currentTitles = [eventTitle1, eventTitle2].sort();
-                
-                // Check if this exact pair of events in this time slot already exists
-                return existing.timeSlot === detectedConflict.timeSlot &&
-                       existingTitles[0] === currentTitles[0] &&
-                       existingTitles[1] === currentTitles[1];
-              });
-              
-              if (!isDuplicate) {
-                allDetectedConflicts.push(detectedConflict);
-                console.log(`Added conflict: ${eventTitle1} vs ${eventTitle2}`);
-              } else {
-                console.log(`Skipped duplicate: ${eventTitle1} vs ${eventTitle2}`);
-              }
-            }
+      // Check for overlapping events using proper pairwise comparison
+      const conflictPairs: Array<[any, any]> = [];
+      
+      for (let i = 0; i < timeEvents.length; i++) {
+        for (let j = i + 1; j < timeEvents.length; j++) {
+          const event1 = timeEvents[i];
+          const event2 = timeEvents[j];
+          
+          const start1 = new Date(event1.start_time);
+          const end1 = new Date(event1.end_time);
+          const start2 = new Date(event2.start_time);  
+          const end2 = new Date(event2.end_time);
+          
+          console.log(`🔄 Checking overlap: "${event1.title}" vs "${event2.title}"`);
+          console.log(`   Event 1: ${start1.toLocaleString()} - ${end1.toLocaleString()}`);
+          console.log(`   Event 2: ${start2.toLocaleString()} - ${end2.toLocaleString()}`);
+          
+          // Check for time overlap: events overlap if start1 < end2 AND start2 < end1
+          const hasOverlap = start1 < end2 && start2 < end1;
+          
+          console.log(`   Result: ${hasOverlap ? '🚨 CONFLICT DETECTED!' : '✅ No conflict'}`);
+          
+          if (hasOverlap) {
+            conflictPairs.push([event1, event2]);
+            console.log(`🆕 Added conflict pair: ${event1.title} vs ${event2.title}`);
           }
-        } catch (error) {
-          console.error(`Error checking conflicts for ${event.title}:`, error);
         }
       }
 
-      console.log(`Total unique conflicts detected: ${allDetectedConflicts.length}`);
+      console.log(`🗂️ Found ${conflictPairs.length} unique conflict pairs`);
+
+      // Convert conflict pairs to DetectedConflict objects
+      conflictPairs.forEach(([event1, event2]) => {
+        // Calculate overlap details
+        const start1 = new Date(event1.start_time);
+        const end1 = new Date(event1.end_time);
+        const start2 = new Date(event2.start_time);
+        const end2 = new Date(event2.end_time);
+        
+        const overlapStart = new Date(Math.max(start1.getTime(), start2.getTime()));
+        const overlapEnd = new Date(Math.min(end1.getTime(), end2.getTime()));
+        const overlapMinutes = Math.round((overlapEnd.getTime() - overlapStart.getTime()) / (1000 * 60));
+        
+        // Use the earlier event's start time as the conflict time slot
+        const conflictTimeSlot = start1 <= start2 ? event1.start_time : event2.start_time;
+        
+        // Create unique conflict ID based on event IDs (sorted for consistency)
+        const eventIds = [event1.id, event2.id].sort();
+        const conflictId = `conflict-${eventIds.join('-')}`;
+        
+        // Determine severity based on overlap duration and priorities
+        let severity: 'low' | 'medium' | 'high' = 'medium';
+        const priority1 = event1.priority_level || 3;
+        const priority2 = event2.priority_level || 3;
+        const highestPriority = Math.min(priority1, priority2); // Lower number = higher priority
+        
+        if (overlapMinutes >= 60 || highestPriority <= 2) {
+          severity = 'high';
+        } else if (overlapMinutes >= 30 || highestPriority <= 3) {
+          severity = 'medium';
+        } else {
+          severity = 'low';
+        }
+        
+        const detectedConflict: DetectedConflict = {
+          id: conflictId,
+          timeSlot: conflictTimeSlot,
+          events: [
+            {
+              id: event1.id || 'unknown',
+              title: event1.title,
+              start_time: event1.start_time,
+              end_time: event1.end_time,
+              priority_level: priority1
+            },
+            {
+              id: event2.id || 'unknown',
+              title: event2.title,
+              start_time: event2.start_time,
+              end_time: event2.end_time,
+              priority_level: priority2
+            }
+          ],
+          severity,
+          suggestedResolution: `${overlapMinutes} minute overlap detected. Consider rescheduling one event.`,
+          bertAnalysis: {
+            confidence: 0.95,
+            reasoning: `Time overlap analysis: ${overlapMinutes} minutes overlap between "${event1.title}" and "${event2.title}"`
+          }
+        };
+        
+        allDetectedConflicts.push(detectedConflict);
+        console.log(`✅ Created conflict: ${event1.title} vs ${event2.title} (${overlapMinutes}min overlap)`);
+      });
+
+      console.log(`🎯 Total unique conflicts detected: ${allDetectedConflicts.length}`);
       setConflicts(allDetectedConflicts);
 
     } catch (error) {
-      console.error('Error in conflict detection:', error);
+      console.error('❌ Error in conflict detection:', error);
       setConflicts([]);
     } finally {
       setIsLoading(false);

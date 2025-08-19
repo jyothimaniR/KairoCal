@@ -12,7 +12,14 @@ import {
 } from '@heroicons/react/24/outline';
 import { useVoice } from '../../hooks/useVoice';
 import { useSystemHealth } from '../../hooks/useSystemHealth';
+import { useDashboard } from '../../hooks/useDashboard';
+import { useNotificationGenerator } from '../../hooks/useNotificationGenerator';
 import UserButton from './UserButton';
+import { NotificationDropdown } from '../notifications/NotificationDropdown';
+// Import development helper in development mode
+if (process.env.NODE_ENV === 'development') {
+  import('../../utils/notificationDev');
+}
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -20,7 +27,11 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   // Use unified system health hook
-  const { isVoiceHealthy, isBertHealthy } = useSystemHealth();
+  const { isVoiceHealthy, isBertHealthy, systemHealth } = useSystemHealth();
+  // Get real event data for the indicator
+  const { events, productivityMetrics } = useDashboard();
+  // Generate notifications automatically
+  useNotificationGenerator();
   const location = useLocation();
   const navigate = useNavigate();
   const { isListening, startListening, stopListening } = useVoice();
@@ -75,7 +86,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
         {/* AI Status Panel */}
         <div className="px-6 py-4 border-t border-gray-200">
-          <div className="text-xs font-medium text-gray-900 mb-3">🤖 AI Status</div>
+          <div className="text-xs font-medium text-gray-900 mb-3 flex items-center justify-between">
+            <span>🤖 AI Status</span>
+            <div className={`w-1.5 h-1.5 rounded-full ${systemHealth ? 'bg-green-400 animate-pulse' : 'bg-gray-400'}`}></div>
+          </div>
           <div className="space-y-2 text-xs">
             <div className={`flex items-center ${isBertHealthy ? 'text-green-600' : 'text-red-600'}`}>
               <div className={`w-2 h-2 rounded-full mr-2 ${isBertHealthy ? 'bg-green-500' : 'bg-red-500'}`}></div>
@@ -85,12 +99,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               <div className={`w-2 h-2 rounded-full mr-2 ${isVoiceHealthy ? 'bg-green-500' : 'bg-red-500'}`}></div>
               Voice {isVoiceHealthy ? 'Ready' : 'Unavailable'}
             </div>
-            <div className="flex items-center text-blue-600">
-              <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
-              Sync Active
+            <div className={`flex items-center ${systemHealth ? 'text-blue-600' : 'text-gray-400'}`}>
+              <div className={`w-2 h-2 rounded-full mr-2 ${systemHealth ? 'bg-blue-500' : 'bg-gray-400'}`}></div>
+              Sync {systemHealth ? 'Active' : 'Offline'}
             </div>
-            <div className="text-xs text-gray-500 mt-2">
-              📊 12 events
+            <div className="text-xs text-gray-500 mt-2 pt-2 border-t border-gray-100">
+              📊 {events.length} events
             </div>
           </div>
         </div>
@@ -148,22 +162,20 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             {/* Right Side */}
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-3 text-sm">
-                <button
-                  type="button"
-                  className="p-2 hover:bg-gray-100 rounded-lg relative"
-                  aria-label="Notifications"
-                  title="Notifications"
-                >
-                  <BellIcon className="h-5 w-5 text-gray-600" />
-                  <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full text-xs text-white flex items-center justify-center"></span>
-                </button>
+                <NotificationDropdown />
                 <div className={`flex items-center space-x-2 px-3 py-1 rounded-lg ${isVoiceHealthy ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
                   <MicrophoneIcon className="h-4 w-4" />
                   <span className="text-xs font-medium">
                     {isVoiceHealthy ? 'Voice Ready' : 'Voice Offline'}
                   </span>
                 </div>
-                <span className="text-purple-600 font-medium">📊 87%</span>
+                <div 
+                  className="flex items-center space-x-1 px-3 py-1 bg-purple-50 text-purple-600 rounded-lg cursor-pointer hover:bg-purple-100 transition-colors"
+                  title={`Productivity Score: ${productivityMetrics.currentScore || 0}% - Based on calendar efficiency and goal completion`}
+                  onClick={() => navigate('/analytics')}
+                >
+                  <span className="text-xs font-medium">📊 {productivityMetrics.currentScore || 0}%</span>
+                </div>
               </div>
               <UserButton 
                 isVoiceHealthy={isVoiceHealthy}

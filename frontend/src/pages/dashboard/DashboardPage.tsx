@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { 
-  SparklesIcon,
   ExclamationTriangleIcon,
   ArrowPathIcon
 } from '@heroicons/react/24/outline';
@@ -10,6 +9,7 @@ import { getEventIcon } from '../../utils/eventIconUtils';
 import UnifiedEventCreator from '../../components/voice/UnifiedEventCreator';
 import MiniCalendar from '../../components/calendar/MiniCalendar';
 import AnalyticsPanel from '../../components/analytics/AnalyticsPanel';
+import { RecentActivity } from '../../components/dashboard/RecentActivity';
 import PriorityConflictResolver from '../../components/conflicts/PriorityConflictResolver';
 import { PriorityChangeModal } from '../../components/modals/PriorityChangeModal';
 import { useDashboard } from '../../hooks/useDashboard';
@@ -19,13 +19,11 @@ const DashboardPage: React.FC = () => {
   const {
     events,
     productivityMetrics,
-    priorityAlerts,
     isLoading,
     error,
     lastUpdated,
     loadDashboardData,
     updateEventPriority,
-    dismissPriorityAlert,
     clearError
   } = useDashboard();
 
@@ -34,38 +32,7 @@ const DashboardPage: React.FC = () => {
 
   // Helper function to format priority display (imported from utils)
 
-  const handleAcceptPriority = async (alertId: string, eventId: string, newPriority: number) => {
-    console.log('🔄 Handling priority acceptance:', { alertId, eventId, newPriority });
-    
-    // Additional debugging to verify event ID extraction
-    console.log('Alert ID parts:', alertId.split('-'));
-    console.log('Extracted event ID:', eventId);
-    console.log('Event ID type:', typeof eventId);
-    
-    // Validate inputs
-    if (!eventId || eventId === 'undefined' || eventId === 'null') {
-      console.error('❌ Invalid event ID:', eventId);
-      return;
-    }
-    
-    if (!newPriority || newPriority < 1 || newPriority > 5) {
-      console.error('❌ Invalid priority level:', newPriority);
-      return;
-    }
-    
-    try {
-      const success = await updateEventPriority(eventId, newPriority);
-      
-      if (success) {
-        console.log('✅ Priority updated successfully, dismissing alert');
-        dismissPriorityAlert(alertId);
-      } else {
-        console.error('❌ Failed to update priority - API returned false');
-      }
-    } catch (error) {
-      console.error('❌ Error in handleAcceptPriority:', error);
-    }
-  };
+  // AI Priority Alerts have been permanently disabled on the dashboard.
 
   const handleChangePriority = (eventId: string, currentPriority: number, eventTitle: string) => {
     setPriorityModalState({
@@ -175,56 +142,7 @@ const DashboardPage: React.FC = () => {
         </motion.div>
       )}
 
-      {/* AI Priority Alerts */}
-      {priorityAlerts.length > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="space-y-3"
-        >
-          {priorityAlerts.slice(0, 2).map((alert) => (
-            <div
-              key={alert.id}
-              className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl p-6 text-white"
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <SparklesIcon className="h-8 w-8" />
-                  <div>
-                    <h3 className="text-lg font-semibold">🤖 AI Priority Alert</h3>
-                    <p className="text-purple-100">"{alert.event_title}" detected as higher priority</p>
-                    <div className="mt-2 text-sm text-purple-200">
-                      Priority: {alert.original_priority} → {alert.suggested_priority}⭐ 
-                      Confidence: {Math.round(alert.confidence * 100)}%
-                    </div>
-                    <div className="text-xs text-purple-300 mt-1">
-                      {alert.reasoning}
-                    </div>
-                  </div>
-                </div>
-                <div className="flex space-x-2">
-                  <button 
-                    onClick={() => handleAcceptPriority(
-                      alert.id,
-                      alert.id.substring(6), // Extract event ID from alert-{eventId} (remove "alert-" prefix)
-                      alert.suggested_priority
-                    )}
-                    className="bg-white/20 px-4 py-2 rounded-lg text-sm hover:bg-white/30 transition-colors"
-                  >
-                    ✅ Accept
-                  </button>
-                  <button 
-                    onClick={() => dismissPriorityAlert(alert.id)}
-                    className="bg-white/20 px-2 py-2 rounded-lg text-sm hover:bg-white/30 transition-colors"
-                  >
-                    ✖️
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </motion.div>
-      )}
+  {/* AI Priority Alerts: removed by request - no alerts will render here */}
 
       {/* Main Dashboard Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -403,48 +321,7 @@ const DashboardPage: React.FC = () => {
       <PriorityConflictResolver />
 
       {/* Recent Activity */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
-        className="bg-white rounded-xl p-6 shadow-sm border border-gray-200"
-      >
-        <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-          ⚡ Recent Activity
-        </h2>
-        
-        <div className="space-y-4">
-          <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-            <div className="flex-1">
-              <p className="text-sm font-medium text-gray-900">
-                Event priority updated by AI
-              </p>
-              <p className="text-xs text-gray-500">18 min ago</p>
-            </div>
-          </div>
-
-          <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-            <div className="flex-1">
-              <p className="text-sm font-medium text-gray-900">
-                Voice command processed: "Team meeting tomorrow"
-              </p>
-              <p className="text-xs text-gray-500">34 min ago</p>
-            </div>
-          </div>
-
-          <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-            <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-            <div className="flex-1">
-              <p className="text-sm text-gray-900">
-                Analytics data refreshed
-              </p>
-              <p className="text-xs text-gray-500">23 min ago</p>
-            </div>
-          </div>
-        </div>
-      </motion.div>
+      <RecentActivity events={events} isLoading={isLoading} />
 
       {/* System Health Status */}
       {systemHealth && (
