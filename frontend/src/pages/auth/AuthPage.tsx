@@ -30,14 +30,6 @@ const AuthPage: React.FC = () => {
     };
   }, []);
 
-  // Real-time stats (matching landing page data)
-  const [stats] = useState({
-    eventsProcessed: 1247,
-    aiAccuracy: 87.3,
-    voiceCommands: 892,
-    conflictsResolved: 156
-  });
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white overflow-hidden">
       {/* Advanced Animated Background (matching landing page) */}
@@ -79,20 +71,7 @@ const AuthPage: React.FC = () => {
           KairoCal
         </motion.div>
         
-        {/* Live stats in nav */}
-        <motion.div 
-          className="hidden md:flex items-center gap-6 text-sm"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.3 }}
-        >
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-            <span className="text-gray-300">{stats.eventsProcessed.toLocaleString()} events processed</span>
-          </div>
-          <div className="text-gray-400">|</div>
-          <div className="text-gray-300">{stats.aiAccuracy}% AI accuracy</div>
-        </motion.div>
+
 
         <motion.button
           className="text-gray-300 hover:text-white text-sm transition-colors"
@@ -138,7 +117,7 @@ const AuthPage: React.FC = () => {
                   </div>
                 </motion.div>
                 
-                {/* AI Badge */}
+                {/* Academic Research Badge */}
                 <motion.div
                   className="inline-flex items-center gap-2 px-3 py-1 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-full border border-blue-500/30 mb-4"
                   initial={{ opacity: 0, y: 10 }}
@@ -146,7 +125,7 @@ const AuthPage: React.FC = () => {
                   transition={{ delay: 0.4 }}
                 >
                   <div className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-pulse"></div>
-                  <span className="text-xs font-medium text-blue-300">Powered by Advanced AI</span>
+                  <span className="text-xs font-medium text-blue-300">Firebase Authentication</span>
                 </motion.div>
               </div>
 
@@ -243,11 +222,11 @@ const AuthPage: React.FC = () => {
               transition={{ duration: 0.6, delay: 0.5 }}
             >
               <span className="bg-gradient-to-r from-white via-blue-200 to-purple-200 bg-clip-text text-transparent">
-                Revolutionizing the way
+                Authentication System
               </span>
               <br />
               <span className="bg-gradient-to-r from-pink-400 via-purple-400 to-blue-400 bg-clip-text text-transparent">
-                the world schedules
+                Built with Firebase
               </span>
             </motion.h1>
             
@@ -257,9 +236,55 @@ const AuthPage: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.7 }}
             >
-              Experience AI-powered scheduling with <span className="text-blue-400 font-semibold">BERT neural networks</span>, 
-              voice commands, intelligent conflict detection, and seamless calendar management.
+              Production-grade authentication featuring <span className="text-blue-400 font-semibold">Firebase integration</span>, 
+              OAuth support, protected routing, and user data isolation across the application.
             </motion.p>
+            
+            {/* Technical Implementation Details */}
+            <motion.div
+              className="bg-gradient-to-r from-gray-500/10 to-gray-600/10 border border-gray-500/20 rounded-xl p-6 mb-6 max-w-2xl mx-auto"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.9 }}
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div>
+                  <h3 className="font-semibold text-gray-300 mb-2">Frontend Architecture</h3>
+                  <ul className="text-gray-400 space-y-1">
+                    <li>• Firebase Authentication SDK</li>
+                    <li>• React Context API for state</li>
+                    <li>• Protected route components</li>
+                    <li>• Real-time auth state updates</li>
+                  </ul>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-300 mb-2">Security Features</h3>
+                  <ul className="text-gray-400 space-y-1">
+                    <li>• OAuth 2.0 (Google)</li>
+                    <li>• JWT token management</li>
+                    <li>• User data isolation</li>
+                    <li>• Session persistence</li>
+                  </ul>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Academic Project Disclaimer */}
+            <motion.div
+              className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20 rounded-xl p-4 max-w-lg mx-auto"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 1.1 }}
+            >
+              <div className="text-center">
+                <p className="text-sm text-blue-300 mb-2">
+                  <span className="font-semibold">MSc Dissertation Project</span> - University of Liverpool
+                </p>
+                <p className="text-xs text-blue-400">
+                  Computer Science 2024-25 | Supervisor: Prof. Frank Wolter
+                </p>
+              </div>
+            </motion.div>
           </motion.div>
 
           {/* Geometric floating elements */}

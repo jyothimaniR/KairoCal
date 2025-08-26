@@ -85,8 +85,8 @@ const analyzeConflictsFixed = (events: any[]): DetectedConflict[] => {
     
     console.log(`⚠️ Creating conflict for pair at ${timeSlot}:`, eventPair.map(e => e.title));
     
-    const highestPriority = Math.min(...eventPair.map(e => e.priority_level));
-    const severity = highestPriority <= 2 ? 'high' : highestPriority <= 3 ? 'medium' : 'low';
+    const highestPriority = Math.max(...eventPair.map(e => e.priority_level));
+    const severity = highestPriority >= 4 ? 'high' : highestPriority >= 3 ? 'medium' : 'low';
     
     const conflict: DetectedConflict = {
       id: groupKey,

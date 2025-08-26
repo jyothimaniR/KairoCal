@@ -142,7 +142,7 @@ const PriorityConflictResolver: React.FC = () => {
         let severity: 'low' | 'medium' | 'high' = 'medium';
         const priority1 = event1.priority_level || 3;
         const priority2 = event2.priority_level || 3;
-        const highestPriority = Math.min(priority1, priority2); // Lower number = higher priority
+        const highestPriority = Math.max(priority1, priority2); // Higher number = higher priority
         
         if (overlapMinutes >= 60 || highestPriority <= 2) {
           severity = 'high';
@@ -205,22 +205,37 @@ const PriorityConflictResolver: React.FC = () => {
     const priority1 = event1.priority_level || 3;
     const priority2 = event2.priority_level || 3;
     
-    // Priority recommendations (lower number = higher priority)
+    // Priority recommendations (higher number = higher priority in KairoCal)
+    // FIXED: Corrected the logic - we should move the LOWER priority event (lower number)
     if (priority1 < priority2) {
-      return `Consider moving "${event2.title}".`;
+      // Event1 has lower priority (lower number), so move it
+      return `Consider moving "${event1.title}" (Priority ${priority1} - ${getPriorityLabel(priority1)}).`;
     } else if (priority2 < priority1) {
-      return `Consider moving "${event1.title}".`;
+      // Event2 has lower priority (lower number), so move it
+      return `Consider moving "${event2.title}" (Priority ${priority2} - ${getPriorityLabel(priority2)}).`;
     } else {
       // Same priority - suggest based on event characteristics
       const duration1 = new Date(event1.end_time).getTime() - new Date(event1.start_time).getTime();
       const duration2 = new Date(event2.end_time).getTime() - new Date(event2.start_time).getTime();
       
       if (duration1 > duration2) {
-        return `Consider moving "${event2.title}".`;
+        return `Consider moving "${event2.title}" (shorter duration).`;
       } else {
-        return `Consider moving "${event1.title}".`;
+        return `Consider moving "${event1.title}" (shorter duration).`;
       }
     }
+  };
+
+  // Helper function to get priority label
+  const getPriorityLabel = (priority: number): string => {
+    const labels: Record<number, string> = {
+      1: 'Very Low',
+      2: 'Low', 
+      3: 'Medium',
+      4: 'High',
+      5: 'Critical'
+    };
+    return labels[priority] || 'Unknown';
   };
 
   const updateEventPriority = async (eventId: string, newPriority: number) => {

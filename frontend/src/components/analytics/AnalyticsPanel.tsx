@@ -146,7 +146,7 @@ const AnalyticsPanel: React.FC<AnalyticsPanelProps> = ({ className = '' }) => {
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-lg font-semibold text-gray-900 flex items-center">
           <ChartBarIcon className="h-5 w-5 mr-2" />
-          📊 AI Analytics Overview
+          📊 Analytics Overview
         </h3>
         <button
           onClick={handleRefresh}

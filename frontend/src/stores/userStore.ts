@@ -8,8 +8,8 @@ interface UserData {
 const USER_STORAGE_KEY = 'kairocal-user-data';
 
 const defaultUser: UserData = {
-  full_name: 'John Doe',
-  email: 'john.doe@example.com',
+  full_name: 'Jyothimani',
+  email: 'jyothimani1197@gmail.com',
   account_status: 'active'
 };
 

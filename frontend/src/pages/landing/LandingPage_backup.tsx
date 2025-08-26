@@ -67,7 +67,7 @@ const LandingPage: React.FC = () => {
   // Advanced features data (based on actual implementation)
   const advancedFeatures = [
     {
-      icon: "🧠",
+      icon: "ðŸ§ ",
       title: "BERT AI Classification",
       subtitle: "85% Validation Accuracy",
       description: "Implemented DistilBERT neural network for automated priority classification with 85% validation accuracy. Custom training pipeline with 15,000 synthetic examples demonstrates transformer model fine-tuning for domain-specific calendar intelligence.",
@@ -76,7 +76,7 @@ const LandingPage: React.FC = () => {
       status: "Implemented"
     },
     {
-      icon: "🎤",
+      icon: "¤",
       title: "Voice-to-Calendar Pipeline", 
       subtitle: "95% Entity Recognition Success",
       description: "Developed multi-modal NLP pipeline integrating Web Audio API, speech-to-text processing, and spaCy entity extraction. Dissertation contribution in unified voice-text processing for calendar automation with 95% entity recognition accuracy.",
@@ -85,7 +85,7 @@ const LandingPage: React.FC = () => {
       status: "Implemented"
     },
     {
-      icon: "⚡",
+      icon: "¡",
       title: "Smart Conflict Detection",
       subtitle: "Sub-50ms Query Performance",
       description: "Designed and implemented temporal indexing algorithms with SQLite optimization for sub-50ms conflict detection. Dissertation focus on priority-weighted resolution strategies using BERT semantic understanding.",
@@ -94,12 +94,30 @@ const LandingPage: React.FC = () => {
       status: "Implemented"
     },
     {
-      icon: "🔄",
+      icon: "📅",
+      title: "Interactive Calendar Views",
+      subtitle: "Multi-View Calendar System",
+      description: "Built comprehensive calendar interface with Month, Week, Day, Year, and Schedule views. Features event drag-and-drop, priority color-coding, and real-time event updates. Academic focus on user interface design patterns for calendar applications.",
+      tech: "React • Framer Motion • Custom Grid Layout",
+      metrics: "5 view modes, responsive design",
+      status: "Implemented"
+    },
+    {
+      icon: "ï¿½ðŸ”„",
       title: "Real-time Sync",
       subtitle: "WebSocket Integration",
       description: "Implemented WebSocket-based real-time synchronization with React frontend and FastAPI backend. Technical achievement in bi-directional calendar updates with conflict resolution and state management.",
       tech: "WebSocket • python-socketio • FastAPI",
       metrics: "Sub-100ms sync latency",
+      status: "Implemented"
+    },
+    {
+      icon: "ðŸ“",
+      title: "Analytics Dashboard",
+      subtitle: "Performance Metrics & Insights",
+      description: "Developed comprehensive analytics system tracking BERT performance, voice recognition accuracy, and user productivity metrics. Academic contribution in calendar intelligence measurement and behavioral analysis.",
+      tech: "Chart.js • Analytics API • Time-series Data",
+      metrics: "15+ metrics tracked, real-time updates",
       status: "Implemented"
     }
   ];
@@ -375,7 +393,7 @@ const LandingPage: React.FC = () => {
                     
                     {/* Performance metrics */}
                     <div className="text-sm text-gray-400 font-mono">
-                      📊 {feature.metrics}
+                      ðŸ“ {feature.metrics}
                     </div>
                   </div>
                 </div>
@@ -428,7 +446,7 @@ const LandingPage: React.FC = () => {
                 >
                   <div className="text-center">
                     <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full flex items-center justify-center text-2xl mb-4 mx-auto">
-                      🎤
+                      ¤
                     </div>
                     <h3 className="text-lg font-bold mb-2 text-white">Voice Input</h3>
                     <div className="bg-white/10 rounded-lg p-3 mb-3">
@@ -437,9 +455,9 @@ const LandingPage: React.FC = () => {
                       </p>
                     </div>
                     <div className="text-xs text-gray-400 space-y-1">
-                      <div>• Web Audio API</div>
-                      <div>• 16kHz Sampling</div>
-                      <div>• 95% Recognition</div>
+                      <div>€¢ Web Audio API</div>
+                      <div>€¢ 16kHz Sampling</div>
+                      <div>€¢ 95% Recognition</div>
                     </div>
                     <div className="mt-2 text-xs">
                       <span className="bg-blue-500/20 px-2 py-1 rounded-full text-blue-300">
@@ -470,25 +488,25 @@ const LandingPage: React.FC = () => {
                 >
                   <div className="text-center">
                     <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-2xl mb-4 mx-auto">
-                      🧠
+                      ðŸ§ 
                     </div>
                     <h3 className="text-lg font-bold mb-2 text-white">AI Processing</h3>
                     <div className="bg-white/10 rounded-lg p-3 mb-3">
                       <div className="text-xs space-y-1">
                         <div className="flex justify-between">
                           <span>Entity Extraction</span>
-                          <span className="text-green-400">✓</span>
+                          <span className="text-green-400">œ“</span>
                         </div>
                         <div className="flex justify-between">
                           <span>BERT Classification</span>
-                          <span className="text-green-400">✓</span>
+                          <span className="text-green-400">œ“</span>
                         </div>
                       </div>
                     </div>
                     <div className="text-xs text-gray-400 space-y-1">
-                      <div>• DistilBERT Neural Net</div>
-                      <div>• spaCy NLP Pipeline</div>
-                      <div>• 85% Accuracy</div>
+                      <div>€¢ DistilBERT Neural Net</div>
+                      <div>€¢ spaCy NLP Pipeline</div>
+                      <div>€¢ 85% Accuracy</div>
                     </div>
                     <div className="mt-2 text-xs">
                       <span className="bg-purple-500/20 px-2 py-1 rounded-full text-purple-300">
@@ -506,7 +524,7 @@ const LandingPage: React.FC = () => {
                   transition={{ duration: 0.6, delay: 0.4 }}
                   viewport={{ once: true }}
                 >
-                  <div className="text-2xl text-green-400 animate-pulse">→</div>
+                  <div className="text-2xl text-green-400 animate-pulse">†’</div>
                 </motion.div>
 
                 {/* Stage 3: Conflict Detection */}
@@ -519,25 +537,25 @@ const LandingPage: React.FC = () => {
                 >
                   <div className="text-center">
                     <div className="w-16 h-16 bg-gradient-to-r from-orange-500 to-red-500 rounded-full flex items-center justify-center text-2xl mb-4 mx-auto">
-                      ⚡
+                      ¡
                     </div>
                     <h3 className="text-lg font-bold mb-2 text-white">Conflict Detection</h3>
                     <div className="bg-white/10 rounded-lg p-3 mb-3">
                       <div className="text-xs space-y-1">
                         <div className="flex justify-between">
                           <span>Time Overlap</span>
-                          <span className="text-green-400">✓</span>
+                          <span className="text-green-400">œ“</span>
                         </div>
                         <div className="flex justify-between">
                           <span>Priority Check</span>
-                          <span className="text-green-400">✓</span>
+                          <span className="text-green-400">œ“</span>
                         </div>
                       </div>
                     </div>
                     <div className="text-xs text-gray-400 space-y-1">
-                      <div>• SQLite Indexing</div>
-                      <div>• Temporal Algorithms</div>
-                      <div>• 98.5% Accuracy</div>
+                      <div>€¢ SQLite Indexing</div>
+                      <div>€¢ Temporal Algorithms</div>
+                      <div>€¢ 98.5% Accuracy</div>
                     </div>
                     <div className="mt-2 text-xs">
                       <span className="bg-orange-500/20 px-2 py-1 rounded-full text-orange-300">
@@ -555,7 +573,7 @@ const LandingPage: React.FC = () => {
                   transition={{ duration: 0.6, delay: 0.5 }}
                   viewport={{ once: true }}
                 >
-                  <div className="text-2xl text-green-400 animate-pulse">→</div>
+                  <div className="text-2xl text-green-400 animate-pulse">†’</div>
                 </motion.div>
 
                 {/* Stage 4: Calendar Event */}
@@ -568,7 +586,7 @@ const LandingPage: React.FC = () => {
                 >
                   <div className="text-center">
                     <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-teal-500 rounded-full flex items-center justify-center text-2xl mb-4 mx-auto">
-                      📅
+                      ðŸ“…
                     </div>
                     <h3 className="text-lg font-bold mb-2 text-white">Calendar Event</h3>
                     <div className="bg-gradient-to-r from-red-500/20 to-red-600/20 rounded-lg border border-red-500/30 p-3 mb-3">
@@ -579,9 +597,9 @@ const LandingPage: React.FC = () => {
                       </div>
                     </div>
                     <div className="text-xs text-gray-400 space-y-1">
-                      <div>• Real-time WebSocket</div>
-                      <div>• Database Persistence</div>
-                      <div>• Cross-device Sync</div>
+                      <div>€¢ Real-time WebSocket</div>
+                      <div>€¢ Database Persistence</div>
+                      <div>€¢ Cross-device Sync</div>
                     </div>
                     <div className="mt-2 text-xs">
                       <span className="bg-green-500/20 px-2 py-1 rounded-full text-green-300">
@@ -653,7 +671,7 @@ const LandingPage: React.FC = () => {
               viewport={{ once: true }}
             >
               <div className="text-center">
-                <h3 className="text-2xl font-bold text-red-400 mb-4">❌ BEFORE: Traditional Calendar</h3>
+                <h3 className="text-2xl font-bold text-red-400 mb-4">Œ BEFORE: Traditional Calendar</h3>
                 <p className="text-gray-400 mb-6">Manual processes, frequent conflicts, limited intelligence</p>
               </div>
 
@@ -666,10 +684,10 @@ const LandingPage: React.FC = () => {
                     <h4 className="font-semibold text-red-400">Manual Input</h4>
                   </div>
                   <div className="pl-11 space-y-2 text-sm text-gray-300">
-                    <div>• Type out every event detail manually</div>
-                    <div>• Remember dates, times, priorities</div>
-                    <div>• No voice recognition capability</div>
-                    <div className="text-red-400 font-medium">⏱️ Time: 2-3 minutes per event</div>
+                    <div>€¢ Type out every event detail manually</div>
+                    <div>€¢ Remember dates, times, priorities</div>
+                    <div>€¢ No voice recognition capability</div>
+                    <div className="text-red-400 font-medium">±ï¸ Time: 2-3 minutes per event</div>
                   </div>
                 </div>
 
@@ -680,10 +698,10 @@ const LandingPage: React.FC = () => {
                     <h4 className="font-semibold text-red-400">No Intelligent Processing</h4>
                   </div>
                   <div className="pl-11 space-y-2 text-sm text-gray-300">
-                    <div>• No automatic priority detection</div>
-                    <div>• No natural language understanding</div>
-                    <div>• Manual categorization required</div>
-                    <div className="text-red-400 font-medium">⏱️ Additional: 1-2 minutes</div>
+                    <div>€¢ No automatic priority detection</div>
+                    <div>€¢ No natural language understanding</div>
+                    <div>€¢ Manual categorization required</div>
+                    <div className="text-red-400 font-medium">±ï¸ Additional: 1-2 minutes</div>
                   </div>
                 </div>
 
@@ -694,25 +712,25 @@ const LandingPage: React.FC = () => {
                     <h4 className="font-semibold text-red-400">Manual Conflict Detection</h4>
                   </div>
                   <div className="pl-11 space-y-2 text-sm text-gray-300">
-                    <div>• Visually scan calendar for overlaps</div>
-                    <div>• Manually reschedule conflicts</div>
-                    <div>• Often miss complex conflicts</div>
-                    <div className="text-red-400 font-medium">⏱️ Discovery: 5-10 minutes</div>
+                    <div>€¢ Visually scan calendar for overlaps</div>
+                    <div>€¢ Manually reschedule conflicts</div>
+                    <div>€¢ Often miss complex conflicts</div>
+                    <div className="text-red-400 font-medium">±ï¸ Discovery: 5-10 minutes</div>
                   </div>
                 </div>
 
                 {/* Problem Event */}
                 <div className="bg-red-500/20 border border-red-500/50 rounded-lg p-4">
                   <div className="flex items-center gap-3 mb-3">
-                    <div className="w-8 h-8 bg-red-600 rounded-full flex items-center justify-center text-sm">❌</div>
+                    <div className="w-8 h-8 bg-red-600 rounded-full flex items-center justify-center text-sm">Œ</div>
                     <h4 className="font-semibold text-red-400">Result: Problematic Event</h4>
                   </div>
                   <div className="pl-11 space-y-2 text-sm">
                     <div className="bg-red-600/20 p-2 rounded">
                       <div className="font-medium">Team Meeting</div>
                       <div className="text-gray-300">Tomorrow, 2:00 PM</div>
-                      <div className="text-red-300">⚠️ Conflicts with: CEO Call</div>
-                      <div className="text-red-300">⚠️ Priority: Unknown</div>
+                      <div className="text-red-300"> ï¸ Conflicts with: CEO Call</div>
+                      <div className="text-red-300"> ï¸ Priority: Unknown</div>
                     </div>
                     <div className="text-red-400 font-medium mt-2">Total Time Spent: 8-15 minutes + conflict resolution</div>
                   </div>
@@ -729,7 +747,7 @@ const LandingPage: React.FC = () => {
               viewport={{ once: true }}
             >
               <div className="text-center">
-                <h3 className="text-2xl font-bold text-green-400 mb-4">✅ AFTER: KairoCal AI System</h3>
+                <h3 className="text-2xl font-bold text-green-400 mb-4">œ… AFTER: KairoCal AI System</h3>
                 <p className="text-gray-400 mb-6">Intelligent automation, proactive conflict resolution, optimized workflow</p>
               </div>
 
@@ -742,10 +760,10 @@ const LandingPage: React.FC = () => {
                     <h4 className="font-semibold text-green-400">AI Voice Input</h4>
                   </div>
                   <div className="pl-11 space-y-2 text-sm text-gray-300">
-                    <div>• Natural speech recognition (95% accuracy)</div>
-                    <div>• Speak naturally: "Meeting with CEO tomorrow at 2pm"</div>
-                    <div>• Hands-free, eyes-free operation</div>
-                    <div className="text-green-400 font-medium">⏱️ Time: 5-10 seconds</div>
+                    <div>€¢ Natural speech recognition (95% accuracy)</div>
+                    <div>€¢ Speak naturally: "Meeting with CEO tomorrow at 2pm"</div>
+                    <div>€¢ Hands-free, eyes-free operation</div>
+                    <div className="text-green-400 font-medium">±ï¸ Time: 5-10 seconds</div>
                   </div>
                 </div>
 
@@ -756,10 +774,10 @@ const LandingPage: React.FC = () => {
                     <h4 className="font-semibold text-green-400">BERT AI Processing</h4>
                   </div>
                   <div className="pl-11 space-y-2 text-sm text-gray-300">
-                    <div>• Automatic entity extraction (85% accuracy)</div>
-                    <div>• Intelligent priority classification</div>
-                    <div>• Context-aware categorization</div>
-                    <div className="text-green-400 font-medium">⏱️ Processing: 800ms</div>
+                    <div>€¢ Automatic entity extraction (85% accuracy)</div>
+                    <div>€¢ Intelligent priority classification</div>
+                    <div>€¢ Context-aware categorization</div>
+                    <div className="text-green-400 font-medium">±ï¸ Processing: 800ms</div>
                   </div>
                 </div>
 
@@ -770,26 +788,26 @@ const LandingPage: React.FC = () => {
                     <h4 className="font-semibold text-green-400">Priority-Based Conflict Detection</h4>
                   </div>
                   <div className="pl-11 space-y-2 text-sm text-gray-300">
-                    <div>• Real-time overlap detection (98.5% accuracy)</div>
-                    <div>• BERT-powered priority comparison</div>
-                    <div>• Suggests which event to reschedule based on priority</div>
-                    <div className="text-green-400 font-medium">⏱️ Detection: 50ms</div>
+                    <div>€¢ Real-time overlap detection (98.5% accuracy)</div>
+                    <div>€¢ BERT-powered priority comparison</div>
+                    <div>€¢ Suggests which event to reschedule based on priority</div>
+                    <div className="text-green-400 font-medium">±ï¸ Detection: 50ms</div>
                   </div>
                 </div>
 
                 {/* Optimized Event */}
                 <div className="bg-green-500/20 border border-green-500/50 rounded-lg p-4">
                   <div className="flex items-center gap-3 mb-3">
-                    <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center text-sm">✅</div>
+                    <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center text-sm">œ…</div>
                     <h4 className="font-semibold text-green-400">Result: Optimized Event</h4>
                   </div>
                   <div className="pl-11 space-y-2 text-sm">
                     <div className="bg-green-600/20 p-2 rounded">
                       <div className="font-medium">CEO Meeting</div>
                       <div className="text-gray-300">Tomorrow, 2:00 PM</div>
-                      <div className="text-green-300">✅ Priority: Critical (auto-detected)</div>
-                      <div className="text-green-300">✅ No conflicts detected</div>
-                      <div className="text-blue-300">💡 System suggests rescheduling conflicts based on priority</div>
+                      <div className="text-green-300">œ… Priority: Critical (auto-detected)</div>
+                      <div className="text-green-300">œ… No conflicts detected</div>
+                      <div className="text-blue-300">ðŸ’¡ System suggests rescheduling conflicts based on priority</div>
                     </div>
                     <div className="text-green-400 font-medium mt-2">Total Time Spent: ~15 seconds</div>
                   </div>
@@ -806,7 +824,7 @@ const LandingPage: React.FC = () => {
             transition={{ duration: 0.6, delay: 0.4 }}
             viewport={{ once: true }}
           >
-            <h3 className="text-2xl font-bold text-center mb-8 text-purple-400">📊 Quantified Improvements</h3>
+            <h3 className="text-2xl font-bold text-center mb-8 text-purple-400">ðŸ“ Quantified Improvements</h3>
             <div className="grid md:grid-cols-4 gap-6">
               <div className="text-center">
                 <div className="text-3xl font-bold text-green-400 mb-2">95%</div>
@@ -861,7 +879,7 @@ const LandingPage: React.FC = () => {
             viewport={{ once: true }}
           >
             <h2 className="text-3xl font-bold mb-4 text-white">
-              🚀 Live System Status
+              ðŸ€ Live System Status
             </h2>
             <p className="text-gray-400">
               Real-time status of KairoCal's production-ready infrastructure
@@ -899,7 +917,7 @@ const LandingPage: React.FC = () => {
                   <span className="text-green-400">Operational</span>
                 </div>
                 <div className="text-xs text-gray-400 mt-3">
-                  Port: 8000 • Response Time: &lt;200ms
+                  Port: 8000 €¢ Response Time: &lt;200ms
                 </div>
               </div>
             </motion.div>
@@ -934,7 +952,7 @@ const LandingPage: React.FC = () => {
                   <span className="text-blue-400">Enabled</span>
                 </div>
                 <div className="text-xs text-gray-400 mt-3">
-                  Port: 3000 • HMR: Active
+                  Port: 3000 €¢ HMR: Active
                 </div>
               </div>
             </motion.div>
@@ -969,7 +987,7 @@ const LandingPage: React.FC = () => {
                   <span className="text-purple-400">Active</span>
                 </div>
                 <div className="text-xs text-gray-400 mt-3">
-                  Model: DistilBERT • Inference: &lt;500ms
+                  Model: DistilBERT €¢ Inference: &lt;500ms
                 </div>
               </div>
             </motion.div>
@@ -988,19 +1006,19 @@ const LandingPage: React.FC = () => {
                 onClick={() => window.open('http://127.0.0.1:8000/docs', '_blank')}
                 className="px-4 py-2 bg-green-500/20 border border-green-500/30 rounded-lg text-green-400 hover:bg-green-500/30 transition-all text-sm"
               >
-                📖 API Documentation
+                ðŸ“– API Documentation
               </button>
               <button 
                 onClick={() => window.open('http://127.0.0.1:8000/health', '_blank')}
                 className="px-4 py-2 bg-blue-500/20 border border-blue-500/30 rounded-lg text-blue-400 hover:bg-blue-500/30 transition-all text-sm"
               >
-                🏥 Health Check
+                ðŸ¥ Health Check
               </button>
               <button 
                 onClick={() => window.open('http://127.0.0.1:8000/metrics', '_blank')}
                 className="px-4 py-2 bg-purple-500/20 border border-purple-500/30 rounded-lg text-purple-400 hover:bg-purple-500/30 transition-all text-sm"
               >
-                📊 Metrics Dashboard
+                ðŸ“ Metrics Dashboard
               </button>
             </div>
           </motion.div>
@@ -1032,25 +1050,25 @@ const LandingPage: React.FC = () => {
                 layer: "Frontend",
                 tech: ["React 19.1.0", "TypeScript 5.8", "Vite 4.5", "Tailwind 3.4"],
                 color: "from-blue-500 to-cyan-500",
-                status: "✅ Implemented"
+                status: "œ… Implemented"
               },
               {
                 layer: "Backend", 
                 tech: ["FastAPI 0.104", "Python 3.11", "SQLAlchemy 2.0", "Uvicorn"],
                 color: "from-green-500 to-teal-500",
-                status: "✅ Implemented"
+                status: "œ… Implemented"
               },
               {
                 layer: "AI/ML",
                 tech: ["DistilBERT", "PyTorch 2.7", "spaCy 3.7", "Transformers 4.35"],
                 color: "from-purple-500 to-pink-500",
-                status: "✅ Implemented"
+                status: "œ… Implemented"
               },
               {
                 layer: "Database & Storage",
                 tech: ["SQLite", "Local Storage", "Browser IndexedDB", "JSON Files"],
                 color: "from-orange-500 to-red-500",
-                status: "✅ Implemented"
+                status: "œ… Implemented"
               }
             ].map((stack, index) => (
               <motion.div
@@ -1219,3 +1237,18 @@ const LandingPage: React.FC = () => {
 };
 
 export default LandingPage;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

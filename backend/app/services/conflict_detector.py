@@ -358,21 +358,22 @@ class SmartConflictDetector:
         """Generate intelligent resolution suggestions based on priorities"""
         suggestions = []
         
-        if new_priority > existing_priority:
+        # FIXED: In KairoCal, higher numbers = higher priority (5=Critical, 1=Very Low)
+        if new_priority > existing_priority:  # New event has higher priority
             suggestions.extend([
-                f"Consider rescheduling the existing lower-priority event",
-                f"Move the existing event to a different time slot",
+                f"Consider rescheduling the existing lower-priority event (Priority {existing_priority})",
+                f"Move the existing event to a different time slot to accommodate the higher priority new event (Priority {new_priority})",
                 f"Shorten the existing event if possible"
             ])
-        elif existing_priority > new_priority:
+        elif existing_priority > new_priority:  # Existing event has higher priority  
             suggestions.extend([
-                f"Consider scheduling the new event at a different time",
+                f"Consider scheduling the new event at a different time (existing event has higher priority: {existing_priority} vs {new_priority})",
                 f"Find an alternative time slot for the new event",
                 f"Evaluate if the new event can be postponed"
             ])
         else:
             suggestions.extend([
-                f"Both events have similar priority - consider user preferences",
+                f"Both events have similar priority ({new_priority}) - consider user preferences",
                 f"Check if either event can be moved to avoid overlap",
                 f"Consider combining or consolidating if events are related"
             ])

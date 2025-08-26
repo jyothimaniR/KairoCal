@@ -122,14 +122,29 @@ const ConflictDetectionPanel: React.FC = () => {
         let severity: 'low' | 'medium' | 'high' = 'medium';
         const priority1 = event1.priority_level || 3;
         const priority2 = event2.priority_level || 3;
-        const highestPriority = Math.min(priority1, priority2); // Lower number = higher priority
+        const highestPriority = Math.max(priority1, priority2); // Higher number = higher priority
         
-        if (overlapMinutes >= 60 || highestPriority <= 2) {
+        if (overlapMinutes >= 60 || highestPriority >= 4) {
           severity = 'high';
-        } else if (overlapMinutes >= 30 || highestPriority <= 3) {
+        } else if (overlapMinutes >= 30 || highestPriority >= 3) {
           severity = 'medium';
         } else {
           severity = 'low';
+        }
+
+        // Generate intelligent AI recommendation based on priority
+        let aiRecommendation = '';
+        if (priority1 !== priority2) {
+          const lowerPriorityEvent = priority1 < priority2 ? event1 : event2;
+          const lowerPriorityValue = Math.min(priority1, priority2);
+          const higherPriorityValue = Math.max(priority1, priority2);
+          const getPriorityLabel = (p: number) => {
+            const labels: Record<number, string> = { 1: 'Very Low', 2: 'Low', 3: 'Medium', 4: 'High', 5: 'Critical' };
+            return labels[p] || 'Unknown';
+          };
+          aiRecommendation = `Consider moving "${lowerPriorityEvent.title}" (Priority ${lowerPriorityValue} - ${getPriorityLabel(lowerPriorityValue)}) to accommodate the higher priority event (Priority ${higherPriorityValue} - ${getPriorityLabel(higherPriorityValue)}).`;
+        } else {
+          aiRecommendation = `${overlapMinutes} minute overlap detected. Both events have same priority - consider rescheduling based on flexibility.`;
         }
         
         const detectedConflict: DetectedConflict = {
@@ -152,7 +167,7 @@ const ConflictDetectionPanel: React.FC = () => {
             }
           ],
           severity,
-          suggestedResolution: `${overlapMinutes} minute overlap detected. Consider rescheduling one event.`,
+          suggestedResolution: aiRecommendation,
           bertAnalysis: {
             confidence: 0.95,
             reasoning: `Time overlap analysis: ${overlapMinutes} minutes overlap between "${event1.title}" and "${event2.title}"`

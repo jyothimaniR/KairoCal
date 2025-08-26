@@ -84,10 +84,10 @@ const MonthView: React.FC<MonthViewProps> = ({
         const timeCompare = new Date(a.start_time).getTime() - new Date(b.start_time).getTime();
         if (timeCompare !== 0) return timeCompare;
         
-        // Then by priority (lower number = higher priority)
+        // Then by priority (higher number = higher priority, so reverse sort)
         const aPriority = a.priority_level || 3;
         const bPriority = b.priority_level || 3;
-        return aPriority - bPriority;
+        return bPriority - aPriority;
       });
     });
     

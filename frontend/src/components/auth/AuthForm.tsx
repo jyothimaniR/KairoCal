@@ -100,10 +100,10 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
         transition={{ duration: 0.5 }}
       >
         <h1 className="text-4xl font-bold bg-gradient-to-r from-white via-blue-200 to-purple-200 bg-clip-text text-transparent mb-2">
-          {isLogin ? 'Welcome Back' : 'Join the Future'}
+          {isLogin ? 'Access Portal' : 'Join Research Study'}
         </h1>
         <p className="text-gray-400 text-sm">
-          {isLogin ? 'Sign in to access your AI-powered calendar' : 'Create your account and experience intelligent scheduling'}
+          {isLogin ? 'Access the NLP-enhanced calendar research prototype' : 'Create your account to explore intelligent scheduling research'}
         </p>
       </motion.div>
 

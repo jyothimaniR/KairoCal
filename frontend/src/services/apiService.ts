@@ -366,7 +366,7 @@ class APIService {
       ]);
 
       const voiceEvents = events.filter((e) => e.created_via === 'voice').length;
-      const highPriorityEvents = events.filter((e) => (e.priority_level || 3) <= 2).length;
+      const highPriorityEvents = events.filter((e) => (e.priority_level || 3) >= 4).length;
 
       const currentScore = Math.min(87 + voiceEvents * 2 + highPriorityEvents * 3, 100);
 
